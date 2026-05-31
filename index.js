@@ -621,7 +621,7 @@ function showTicketModal(interaction, type) {
       .setCustomId("ticket_base")
       .setLabel("Jaka baze chcesz kupic?")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("np. baza pod serwer, grafike, Discord")
+      .setPlaceholder("np. aqua")
       .setRequired(true);
 
     const paymentInput = new TextInputBuilder()
@@ -635,7 +635,7 @@ function showTicketModal(interaction, type) {
       .setCustomId("ticket_deposit")
       .setLabel("Co w zastaw?")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("np. konto, item, brak")
+      .setPlaceholder("np. garama, 10zl")
       .setRequired(true);
 
     modal.addComponents(
