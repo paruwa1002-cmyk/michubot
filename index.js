@@ -21,7 +21,7 @@ const {
 } = require("discord.js");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
-const BRAND = "Mnichu Trading World ðŸ‘»";
+const BRAND = "Mnichu Trading World 👻";
 const COLOR = "#00FFFF";
 const giveaways = new Map();
 const stickyCooldowns = new Set();
@@ -60,7 +60,7 @@ const SETTINGS = {
     skup: "Skup",
     "middle-man": "Middle man",
     pomoc: "Pomoc",
-    "odbior-nagrody": "OdbiÃ³r nagrody",
+    "odbior-nagrody": "Odbiór nagrody",
   },
   ticketEmojis: {
     zakup: "<:wozek:1510346111368302813>",
@@ -115,9 +115,9 @@ function ticketPanelEmbed() {
     .setDescription(
       [
         "```",
-        `ðŸŽ«  ${SETTINGS.shopName} Ã— STWÃ“RZ TICKET`,
+        `🎫  ${SETTINGS.shopName} × STWÓRZ TICKET`,
         "```",
-        "> ðŸ“© Ã— Wybierz **odpowiedniÄ… kategoriÄ™**, aby utworzyÄ‡ ticketa!",
+        "> 📩 × Wybierz **odpowiednią kategorię**, aby utworzyć ticketa!",
       ].join("\n")
     );
 
@@ -139,10 +139,10 @@ function ticketPanelSmallImageEmbeds() {
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World Ã— WERYFIKACJA``")
-    .setDescription("Kliknij przycisk poniÅ¼ej, aby siÄ™ zweryfikowaÄ‡.")
+    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World × WERYFIKACJA``")
+    .setDescription("Kliknij przycisk poniżej, aby się zweryfikować.")
     .setFooter({
-      text: "Mnichu Trading World Ã— WERYFIKACJA",
+      text: "Mnichu Trading World × WERYFIKACJA",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -209,7 +209,7 @@ async function resolveTicketEmoji(guild, value) {
 async function ticketOption(guild, value, label) {
   const option = {
     label: String(label).slice(0, 100),
-    description: `UtwÃ³rz ticket: ${label}`.slice(0, 100),
+    description: `Utwórz ticket: ${label}`.slice(0, 100),
     value,
   };
 
@@ -253,7 +253,7 @@ function formatDuration(input) {
 function giveawayEmbed(giveaway, guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("`Mnichu Trading World ðŸ‘» Ã— KONKURS`")
+    .setTitle("`Mnichu Trading World 👻 × KONKURS`")
     .addFields(
       {
         name: "Nagroda",
@@ -282,7 +282,7 @@ function giveawayEmbed(giveaway, guild) {
       }
     )
     .setFooter({
-      text: "Mnichu Trading World ðŸ‘» Ã— KONKURSY",
+      text: "Mnichu Trading World 👻 × KONKURSY",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -577,7 +577,7 @@ async function ticketPanelPayload(guild) {
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId("ticket_select")
-    .setPlaceholder("âŒ Ã— Nie wybrano Å¼adnej kategorii")
+    .setPlaceholder("❌ × Nie wybrano żadnej kategorii")
     .addOptions(options);
 
   return {
@@ -589,7 +589,7 @@ async function ticketPanelPayload(guild) {
 function verificationPanelPayload(guild) {
   const verifyButton = new ButtonBuilder()
     .setCustomId("verify")
-    .setLabel("Zweryfikuj siÄ™")
+    .setLabel("Zweryfikuj się")
     .setStyle(ButtonStyle.Success);
 
   return {
@@ -1007,7 +1007,7 @@ client.on("interactionCreate", async (interaction) => {
     if (roles.length !== roleIds.length) {
       return interaction.reply({
         content:
-          "Nie znaleziono jednej z rÃ³l weryfikacyjnych. SprawdÅº ID rÃ³l i czy bot jest na dobrym serwerze.",
+          "Nie znaleziono jednej z ról weryfikacyjnych. Sprawdź ID ról i czy bot jest na dobrym serwerze.",
         ephemeral: true,
       });
     }
@@ -1016,7 +1016,7 @@ client.on("interactionCreate", async (interaction) => {
 
     if (alreadyVerified) {
       return interaction.reply({
-        content: "wzeryfikowaleÅ› sie deklu.",
+        content: "Zweryfikowałeś się.",
         ephemeral: true,
       });
     }
@@ -1025,13 +1025,13 @@ client.on("interactionCreate", async (interaction) => {
 
     if (!addedRoles) {
       return interaction.reply({
-        content: "Nie udaÅ‚o siÄ™ nadaÄ‡ rÃ³l weryfikacyjnych. SprawdÅº uprawnienia i pozycjÄ™ roli bota.",
+        content: "Nie udało się nadać ról weryfikacyjnych. Sprawdź uprawnienia i pozycję roli bota.",
         ephemeral: true,
       });
     }
 
     return interaction.reply({
-      content: "ZostaÅ‚eÅ› zweryfikowany!",
+      content: "Zostałeś zweryfikowany!",
       ephemeral: true,
     });
   }
@@ -1077,4 +1077,3 @@ if (require.main === module) {
 }
 
 module.exports = { commands };
-
