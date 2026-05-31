@@ -1143,7 +1143,7 @@ client.on("interactionCreate", async (interaction) => {
       const paymentMethod = interaction.options.getString("metoda");
 
       return interaction.reply({
-        content: `+rep ${interaction.user} ${item} ${price} ${paymentMethod}`,
+        content: `+rep ${interaction.user} ${item} ${price} [${paymentMethod}]`,
         allowedMentions: { users: [interaction.user.id] },
       });
     }
