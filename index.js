@@ -619,7 +619,10 @@ function formatTicketAnswers(type, answers) {
   }
 
   if (type === "odbior-nagrody") {
-    return `> -Co chcesz odebrac: **${answers.reward || "Brak"}**`;
+    return [
+      `> -Za co chcesz odebrac nagrode: **${answers.rewardReason || "Brak"}**`,
+      `> -Jaka nagrode chcesz odebrac: **${answers.reward || "Brak"}**`,
+    ].join("\n");
   }
 
   if (type === "scamers") {
@@ -746,14 +749,24 @@ function showTicketModal(interaction, type) {
   }
 
   if (type === "odbior-nagrody") {
-    const rewardInput = new TextInputBuilder()
-      .setCustomId("ticket_reward")
-      .setLabel("Co chcesz odebrac?")
+    const rewardReasonInput = new TextInputBuilder()
+      .setCustomId("ticket_reward_reason")
+      .setLabel("Za co chcesz odebrac nagrode?")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("np. nagroda z giveawayu")
+      .setPlaceholder("np. giveaway, konkurs, event")
       .setRequired(true);
 
-    modal.addComponents(new ActionRowBuilder().addComponents(rewardInput));
+    const rewardInput = new TextInputBuilder()
+      .setCustomId("ticket_reward")
+      .setLabel("Jaka nagrode chcesz odebrac?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. Robux, Nitro, PSC")
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(rewardReasonInput),
+      new ActionRowBuilder().addComponents(rewardInput)
+    );
 
     return interaction.showModal(modal);
   }
@@ -1251,6 +1264,7 @@ client.on("interactionCreate", async (interaction) => {
 
     if (type === "odbior-nagrody") {
       return createTicket(interaction, type, {
+        rewardReason: interaction.fields.getTextInputValue("ticket_reward_reason"),
         reward: interaction.fields.getTextInputValue("ticket_reward"),
       });
     }
