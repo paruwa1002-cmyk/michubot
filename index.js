@@ -45,6 +45,15 @@ const SETTINGS = {
   antiSpamMuteMs: 5 * 60 * 1000,
   antiSpamBypassRoleIds: [],
   ticketCategoryId: "1492219297915994215",
+  ticketCategoryIds: {
+    zakup: "",
+    "zakup-bazy": "",
+    skup: "",
+    "middle-man": "",
+    pomoc: "",
+    "odbior-nagrody": "",
+    scamers: "",
+  },
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
 "1503701315363143742",
@@ -176,6 +185,32 @@ function ticketAccessRoleIds(type) {
     ...(SETTINGS.ticketSupportRoleIds || []),
     ...(SETTINGS.ticketCategoryRoleIds?.[type] || []),
   ].filter(Boolean);
+}
+
+async function ticketParentId(guild, type) {
+  const label = SETTINGS.ticketTypes[type] || type;
+  const configuredId = SETTINGS.ticketCategoryIds?.[type] || SETTINGS.ticketCategoryId;
+
+  if (configuredId) {
+    const configuredCategory = await guild.channels.fetch(configuredId).catch(() => null);
+    if (configuredCategory?.type === ChannelType.GuildCategory) {
+      return configuredCategory.id;
+    }
+  }
+
+  const categoryName = `TICKETY - ${label}`.slice(0, 100);
+  const existingCategory = guild.channels.cache.find(
+    (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryName
+  );
+
+  if (existingCategory) return existingCategory.id;
+
+  const category = await guild.channels.create({
+    name: categoryName,
+    type: ChannelType.GuildCategory,
+  });
+
+  return category.id;
 }
 
 async function resolveTicketEmoji(guild, value) {
@@ -487,10 +522,12 @@ async function createTicket(interaction, type, answers = {}) {
       });
     }
 
+    const parentId = await ticketParentId(interaction.guild, type);
+
     const channel = await interaction.guild.channels.create({
       name: `ticket-${type}-${cleanChannelName(interaction.user.username)}`,
       type: ChannelType.GuildText,
-      parent: SETTINGS.ticketCategoryId || null,
+      parent: parentId || null,
       topic: `Ticket: ${type} | User: ${interaction.user.id}`,
       permissionOverwrites,
     });
@@ -576,6 +613,14 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
+  if (type === "middle-man") {
+    return [
+      `> -ID osoby z którą chcesz się wymienić: **${answers.exchangeUserId || "Brak"}**`,
+      `> -Nazwa osoby z którą chcesz się wymienić: **${answers.exchangeUserName || "Brak"}**`,
+      `> -O co jest wymiana: **${answers.exchangeItem || "Brak"}**`,
+    ].join("\n");
+  }
+
   return `Opis sprawy:\n\`\`\`\n${answers.description || "Brak opisu"}\n\`\`\``;
 }
 
@@ -642,6 +687,37 @@ function showTicketModal(interaction, type) {
       new ActionRowBuilder().addComponents(baseInput),
       new ActionRowBuilder().addComponents(paymentInput),
       new ActionRowBuilder().addComponents(depositInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "middle-man") {
+    const userIdInput = new TextInputBuilder()
+      .setCustomId("ticket_exchange_user_id")
+      .setLabel("ID osoby z którą chcesz się wymienić")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. 123456789012345678")
+      .setRequired(true);
+
+    const userNameInput = new TextInputBuilder()
+      .setCustomId("ticket_exchange_user_name")
+      .setLabel("Nazwa osoby z którą chcesz się wymienić")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. nick / nazwa Discord")
+      .setRequired(true);
+
+    const itemInput = new TextInputBuilder()
+      .setCustomId("ticket_exchange_item")
+      .setLabel("O co jest wymiana?")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("np. ja daje Robux, on daje PSC")
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(userIdInput),
+      new ActionRowBuilder().addComponents(userNameInput),
+      new ActionRowBuilder().addComponents(itemInput)
     );
 
     return interaction.showModal(modal);
@@ -759,6 +835,36 @@ const commands = [
   new SlashCommandBuilder()
     .setName("sticky-off")
     .setDescription("Wylacza sticky message na tym kanale"),
+  new SlashCommandBuilder()
+    .setName("mute")
+    .setDescription("Wycisza uzytkownika na podany czas")
+    .addUserOption((option) =>
+      option.setName("uzytkownik").setDescription("Kogo wyciszyc").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("czas").setDescription("Czas, np. 10m, 2h, 1d").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("powod").setDescription("Powod wyciszenia").setRequired(false)
+    ),
+  new SlashCommandBuilder()
+    .setName("kick")
+    .setDescription("Wyrzuca uzytkownika z serwera")
+    .addUserOption((option) =>
+      option.setName("uzytkownik").setDescription("Kogo wyrzucic").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("powod").setDescription("Powod wyrzucenia").setRequired(false)
+    ),
+  new SlashCommandBuilder()
+    .setName("ban")
+    .setDescription("Banuje uzytkownika")
+    .addUserOption((option) =>
+      option.setName("uzytkownik").setDescription("Kogo zbanowac").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("powod").setDescription("Powod bana").setRequired(false)
+    ),
 ];
 
 const client = new Client({
@@ -1000,6 +1106,44 @@ client.on("interactionCreate", async (interaction) => {
         ephemeral: true,
       });
     }
+
+    if (interaction.commandName === "mute") {
+      const user = interaction.options.getUser("uzytkownik");
+      const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+      const durationInput = interaction.options.getString("czas");
+      const duration = parseDuration(durationInput);
+      const reason = interaction.options.getString("powod") || "Brak powodu";
+
+      if (!member) return interaction.reply({ content: "Nie znaleziono tego uzytkownika na serwerze.", ephemeral: true });
+      if (!duration) return interaction.reply({ content: "Podaj czas w formacie np. 10m, 2h albo 1d.", ephemeral: true });
+      if (!member.moderatable) return interaction.reply({ content: "Nie moge wyciszyc tej osoby. Sprawdz role bota.", ephemeral: true });
+
+      await member.timeout(duration, reason);
+      return interaction.reply({ content: `${member} zostal wyciszony na ${formatDuration(durationInput)}. Powod: ${reason}` });
+    }
+
+    if (interaction.commandName === "kick") {
+      const user = interaction.options.getUser("uzytkownik");
+      const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+      const reason = interaction.options.getString("powod") || "Brak powodu";
+
+      if (!member) return interaction.reply({ content: "Nie znaleziono tego uzytkownika na serwerze.", ephemeral: true });
+      if (!member.kickable) return interaction.reply({ content: "Nie moge wyrzucic tej osoby. Sprawdz role bota.", ephemeral: true });
+
+      await member.kick(reason);
+      return interaction.reply({ content: `${user.tag} zostal wyrzucony. Powod: ${reason}` });
+    }
+
+    if (interaction.commandName === "ban") {
+      const user = interaction.options.getUser("uzytkownik");
+      const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+      const reason = interaction.options.getString("powod") || "Brak powodu";
+
+      if (member && !member.bannable) return interaction.reply({ content: "Nie moge zbanowac tej osoby. Sprawdz role bota.", ephemeral: true });
+
+      await interaction.guild.members.ban(user.id, { reason });
+      return interaction.reply({ content: `${user.tag} zostal zbanowany. Powod: ${reason}` });
+    }
   }
 
 
@@ -1031,6 +1175,14 @@ client.on("interactionCreate", async (interaction) => {
         scammerId: interaction.fields.getTextInputValue("ticket_scammer_id"),
         scammerName: interaction.fields.getTextInputValue("ticket_scammer_name"),
         scamDescription: interaction.fields.getTextInputValue("ticket_scam_description"),
+      });
+    }
+
+    if (type === "middle-man") {
+      return createTicket(interaction, type, {
+        exchangeUserId: interaction.fields.getTextInputValue("ticket_exchange_user_id"),
+        exchangeUserName: interaction.fields.getTextInputValue("ticket_exchange_user_name"),
+        exchangeItem: interaction.fields.getTextInputValue("ticket_exchange_item"),
       });
     }
 
@@ -1222,3 +1374,4 @@ if (require.main === module) {
 }
 
 module.exports = { commands };
+
