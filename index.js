@@ -49,7 +49,7 @@ const SETTINGS = {
   ticketCategoryId: "1492219297915994215",
   ticketCategoryIds: {
     zakup: "1510552049941610586",
-    "zakup-bazy": "1510552124029669516",
+    "index": "1510552124029669516",
     skup: "1510552176756396133",
     "middleman": "1510552242221088909",
     pomoc: "1510551447463395329",
@@ -73,7 +73,7 @@ const SETTINGS = {
   },
   ticketTypes: {
     zakup: "Zakup",
-    "zakup-bazy": "Zakup bazy",
+    "index": "index",
     skup: "Skup",
     "middleman": "Middleman",
     pomoc: "Pomoc",
@@ -82,11 +82,11 @@ const SETTINGS = {
   },
   ticketEmojis: {
     zakup: "<:wozek:1510346111368302813>",
-    "zakup-bazy": "<:sab:1510346031483588849>",
+    "index": "<:dom:1510580079447638147>",
     skup: "<:worek:1510536925851816067>",
     "middleman": "<:tarcza:1510540379165032538>",
     pomoc: "<:pytanie:1510345968992911561>",
-    "odbior-nagrody": "<:plus:1510345941809627308>",
+    "odbior-nagrody": "<:prezent:1510580597091864719>",
     scamers: "<:klaun:1510537174045687869>",
   },
   reactionRoles: {
@@ -599,7 +599,7 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
-  if (type === "zakup-bazy") {
+  if (type === "index") {
     return [
       `> -Jaka baze chcesz kupic: **${answers.base || "Brak"}**`,
       `> -Czym placisz: **${answers.payment || "Brak"}**`,
@@ -681,7 +681,7 @@ function showTicketModal(interaction, type) {
     return interaction.showModal(modal);
   }
 
-  if (type === "zakup-bazy") {
+  if (type === "index") {
     const baseInput = new TextInputBuilder()
       .setCustomId("ticket_base")
       .setLabel("Jaka baze chcesz kupic?")
@@ -753,7 +753,7 @@ function showTicketModal(interaction, type) {
       .setCustomId("ticket_reward_reason")
       .setLabel("Za co chcesz odebrac nagrode?")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("np. giveaway, konkurs, event")
+      .setPlaceholder("np. giveaway")
       .setRequired(true);
 
     const rewardInput = new TextInputBuilder()
@@ -1241,7 +1241,7 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    if (type === "zakup-bazy") {
+    if (type === "index") {
       return createTicket(interaction, type, {
         base: interaction.fields.getTextInputValue("ticket_base"),
         payment: interaction.fields.getTextInputValue("ticket_base_payment"),
