@@ -607,6 +607,13 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
+  if (type === "skup") {
+    return [
+      `> -Co chcesz sprzedac: **${answers.item || "Brak"}**`,
+      `> -Czym chcesz dostac kase: **${answers.payout || "Brak"}**`,
+    ].join("\n");
+  }
+
   if (type === "scamers") {
     return [
       `> -ID scamera: **${answers.scammerId || "Brak"}**`,
@@ -689,6 +696,29 @@ function showTicketModal(interaction, type) {
       new ActionRowBuilder().addComponents(baseInput),
       new ActionRowBuilder().addComponents(paymentInput),
       new ActionRowBuilder().addComponents(depositInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "skup") {
+    const itemInput = new TextInputBuilder()
+      .setCustomId("ticket_sell_item")
+      .setLabel("Co chcesz sprzedac?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. Robux, Nitro, konto")
+      .setRequired(true);
+
+    const payoutInput = new TextInputBuilder()
+      .setCustomId("ticket_payout")
+      .setLabel("Czym chcesz dostac kase?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. BLIK, PayPal, PSC")
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(itemInput),
+      new ActionRowBuilder().addComponents(payoutInput)
     );
 
     return interaction.showModal(modal);
@@ -1172,6 +1202,13 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
+    if (type === "skup") {
+      return createTicket(interaction, type, {
+        item: interaction.fields.getTextInputValue("ticket_sell_item"),
+        payout: interaction.fields.getTextInputValue("ticket_payout"),
+      });
+    }
+
     if (type === "scamers") {
       return createTicket(interaction, type, {
         scammerId: interaction.fields.getTextInputValue("ticket_scammer_id"),
@@ -1376,4 +1413,3 @@ if (require.main === module) {
 }
 
 module.exports = { commands };
-
