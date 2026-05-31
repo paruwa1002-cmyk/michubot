@@ -926,6 +926,18 @@ const commands = [
         .setRequired(true)
     ),
   new SlashCommandBuilder()
+    .setName("lc")
+    .setDescription("Wysyla gotowa wiadomosc +rep")
+    .addStringOption((option) =>
+      option.setName("co").setDescription("Co kupiles/sprzedales").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("cena").setDescription("Jaka cena").setRequired(true)
+    )
+    .addStringOption((option) =>
+      option.setName("metoda").setDescription("Jaka metoda platnosci").setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName("mute")
     .setDescription("Wycisza uzytkownika na podany czas")
     .addUserOption((option) =>
@@ -1109,6 +1121,17 @@ client.on("messageReactionRemove", async (reaction, user) => {
 client.on("interactionCreate", async (interaction) => {
   try {
   if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "lc") {
+      const item = interaction.options.getString("co");
+      const price = interaction.options.getString("cena");
+      const paymentMethod = interaction.options.getString("metoda");
+
+      return interaction.reply({
+        content: `+rep ${interaction.user} (${item}) (${price}) (#${paymentMethod})`,
+        allowedMentions: { users: [interaction.user.id] },
+      });
+    }
+
     if (!isAdmin(interaction.member)) {
       return interaction.reply({
         content: "Tylko administrator moze uzyc tej komendy.",
