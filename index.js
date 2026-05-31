@@ -21,7 +21,7 @@ const {
 } = require("discord.js");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
-const BRAND = "Mnichu Trading World 👻";
+const BRAND = "Mnichu Trading World ðŸ‘»";
 const COLOR = "#00FFFF";
 const giveaways = new Map();
 const stickyCooldowns = new Set();
@@ -37,7 +37,7 @@ const SETTINGS = {
   ],
   antiLinkEnabled: true,
   antiLinkMuteMs: 5 * 60 * 1000,
-  antiLinkBypassRoleIds: ["1510346580459261982"],
+  antiLinkBypassRoleIds: [],
   ticketCategoryId: "1492219297915994215",
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
@@ -60,15 +60,15 @@ const SETTINGS = {
     skup: "Skup",
     "middle-man": "Middle man",
     pomoc: "Pomoc",
-    "odbior-nagrody": "Odbiór nagrody",
+    "odbior-nagrody": "OdbiÃ³r nagrody",
   },
   ticketEmojis: {
-    zakup: { id: "1510347006327918703" },
-    "zakup-bazy": { id: "1510347042046607631" },
-    skup: { id: "1510347155313786951" },
-    "middle-man": { id: "1510347199924670645" },
-    pomoc: { id: "1510347242643390609" },
-    "odbior-nagrody": { id: "1510347278177796126" },
+    zakup: "<:wozek:1510346111368302813>",
+    "zakup-bazy": "<:sab:1510346031483588849>",
+    skup: "<:robux:1510346005659386026>",
+    "middle-man": "<:ludzie:1510345875296227390>",
+    pomoc: "<:pytanie:1510345968992911561>",
+    "odbior-nagrody": "<:plus:1510345941809627308>",
   },
   reactionRoles: {
     // "ID_WIADOMOSCI": {
@@ -115,9 +115,9 @@ function ticketPanelEmbed() {
     .setDescription(
       [
         "```",
-        `🎫  ${SETTINGS.shopName} × STWÓRZ TICKET`,
+        `ðŸŽ«  ${SETTINGS.shopName} Ã— STWÃ“RZ TICKET`,
         "```",
-        "> 📩 × Wybierz **odpowiednią kategorię**, aby utworzyć ticketa!",
+        "> ðŸ“© Ã— Wybierz **odpowiedniÄ… kategoriÄ™**, aby utworzyÄ‡ ticketa!",
       ].join("\n")
     );
 
@@ -139,10 +139,10 @@ function ticketPanelSmallImageEmbeds() {
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World × WERYFIKACJA``")
-    .setDescription("Kliknij przycisk poniżej, aby się zweryfikować.")
+    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World Ã— WERYFIKACJA``")
+    .setDescription("Kliknij przycisk poniÅ¼ej, aby siÄ™ zweryfikowaÄ‡.")
     .setFooter({
-      text: "Mnichu Trading World × WERYFIKACJA",
+      text: "Mnichu Trading World Ã— WERYFIKACJA",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -174,11 +174,28 @@ async function resolveTicketEmoji(guild, value) {
   const emoji = SETTINGS.ticketEmojis[value];
 
   if (!emoji) return null;
-  if (!emoji.id) return emoji;
 
-  const guildEmoji = await guild.emojis.fetch(emoji.id).catch(() => null);
+  if (typeof emoji === "string") {
+    const customEmoji = emoji.match(/^<(?<animated>a?):(?<name>[a-zA-Z0-9_]+):(?<id>\d+)>$/);
+    if (customEmoji?.groups) {
+      return {
+        id: customEmoji.groups.id,
+        name: customEmoji.groups.name,
+        animated: customEmoji.groups.animated === "a",
+      };
+    }
+
+    if (!/^\d+$/.test(emoji)) {
+      return { name: emoji };
+    }
+  }
+
+  const emojiId = typeof emoji === "string" ? emoji : emoji.id;
+  if (!emojiId) return emoji;
+
+  const guildEmoji = await guild.emojis.fetch(emojiId).catch(() => null);
   if (!guildEmoji) {
-    console.warn(`Pomijam emoji ticketa "${value}" - nie znaleziono emoji o ID ${emoji.id}.`);
+    console.warn(`Pomijam emoji ticketa "${value}" - nie znaleziono emoji o ID ${emojiId}.`);
     return null;
   }
 
@@ -192,7 +209,7 @@ async function resolveTicketEmoji(guild, value) {
 async function ticketOption(guild, value, label) {
   const option = {
     label: String(label).slice(0, 100),
-    description: `Utwórz ticket: ${label}`.slice(0, 100),
+    description: `UtwÃ³rz ticket: ${label}`.slice(0, 100),
     value,
   };
 
@@ -236,7 +253,7 @@ function formatDuration(input) {
 function giveawayEmbed(giveaway, guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("`Mnichu Trading World 👻 × KONKURS`")
+    .setTitle("`Mnichu Trading World ðŸ‘» Ã— KONKURS`")
     .addFields(
       {
         name: "Nagroda",
@@ -265,7 +282,7 @@ function giveawayEmbed(giveaway, guild) {
       }
     )
     .setFooter({
-      text: "Mnichu Trading World 👻 × KONKURSY",
+      text: "Mnichu Trading World ðŸ‘» Ã— KONKURSY",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -560,7 +577,7 @@ async function ticketPanelPayload(guild) {
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId("ticket_select")
-    .setPlaceholder("❌ × Nie wybrano żadnej kategorii")
+    .setPlaceholder("âŒ Ã— Nie wybrano Å¼adnej kategorii")
     .addOptions(options);
 
   return {
@@ -572,7 +589,7 @@ async function ticketPanelPayload(guild) {
 function verificationPanelPayload(guild) {
   const verifyButton = new ButtonBuilder()
     .setCustomId("verify")
-    .setLabel("Zweryfikuj się")
+    .setLabel("Zweryfikuj siÄ™")
     .setStyle(ButtonStyle.Success);
 
   return {
@@ -732,7 +749,7 @@ client.on("messageCreate", async (message) => {
     }
 
     const warning = await message.channel.send({
-      content: `${message.author}, nie wysyłaj tego ścierwa deklu.`,
+      content: `${message.author}, nie wysyłaj linków.`,
     });
 
     setTimeout(() => warning.delete().catch(() => null), 5000);
@@ -990,7 +1007,7 @@ client.on("interactionCreate", async (interaction) => {
     if (roles.length !== roleIds.length) {
       return interaction.reply({
         content:
-          "Nie znaleziono jednej z ról weryfikacyjnych. Sprawdź ID ról i czy bot jest na dobrym serwerze.",
+          "Nie znaleziono jednej z rÃ³l weryfikacyjnych. SprawdÅº ID rÃ³l i czy bot jest na dobrym serwerze.",
         ephemeral: true,
       });
     }
@@ -999,7 +1016,7 @@ client.on("interactionCreate", async (interaction) => {
 
     if (alreadyVerified) {
       return interaction.reply({
-        content: "wzeryfikowaleś sie deklu.",
+        content: "wzeryfikowaleÅ› sie deklu.",
         ephemeral: true,
       });
     }
@@ -1008,13 +1025,13 @@ client.on("interactionCreate", async (interaction) => {
 
     if (!addedRoles) {
       return interaction.reply({
-        content: "Nie udało się nadać ról weryfikacyjnych. Sprawdź uprawnienia i pozycję roli bota.",
+        content: "Nie udaÅ‚o siÄ™ nadaÄ‡ rÃ³l weryfikacyjnych. SprawdÅº uprawnienia i pozycjÄ™ roli bota.",
         ephemeral: true,
       });
     }
 
     return interaction.reply({
-      content: "Zostałeś zweryfikowany!",
+      content: "ZostaÅ‚eÅ› zweryfikowany!",
       ephemeral: true,
     });
   }
@@ -1060,3 +1077,4 @@ if (require.main === module) {
 }
 
 module.exports = { commands };
+
