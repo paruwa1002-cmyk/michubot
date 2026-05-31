@@ -614,6 +614,14 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
+  if (type === "pomoc") {
+    return `> -W czym mozemy ci pomoc: **${answers.help || "Brak"}**`;
+  }
+
+  if (type === "odbior-nagrody") {
+    return `> -Co chcesz odebrac: **${answers.reward || "Brak"}**`;
+  }
+
   if (type === "scamers") {
     return [
       `> -ID scamera: **${answers.scammerId || "Brak"}**`,
@@ -706,7 +714,7 @@ function showTicketModal(interaction, type) {
       .setCustomId("ticket_sell_item")
       .setLabel("Co chcesz sprzedac?")
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder("np. Robux, Nitro, konto")
+      .setPlaceholder("np. brainrota")
       .setRequired(true);
 
     const payoutInput = new TextInputBuilder()
@@ -720,6 +728,32 @@ function showTicketModal(interaction, type) {
       new ActionRowBuilder().addComponents(itemInput),
       new ActionRowBuilder().addComponents(payoutInput)
     );
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "pomoc") {
+    const helpInput = new TextInputBuilder()
+      .setCustomId("ticket_help")
+      .setLabel("W czym mozemy ci pomoc?")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Opisz, w czym mamy pomoc")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(helpInput));
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "odbior-nagrody") {
+    const rewardInput = new TextInputBuilder()
+      .setCustomId("ticket_reward")
+      .setLabel("Co chcesz odebrac?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. nagroda z giveawayu")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(rewardInput));
 
     return interaction.showModal(modal);
   }
@@ -1206,6 +1240,18 @@ client.on("interactionCreate", async (interaction) => {
       return createTicket(interaction, type, {
         item: interaction.fields.getTextInputValue("ticket_sell_item"),
         payout: interaction.fields.getTextInputValue("ticket_payout"),
+      });
+    }
+
+    if (type === "pomoc") {
+      return createTicket(interaction, type, {
+        help: interaction.fields.getTextInputValue("ticket_help"),
+      });
+    }
+
+    if (type === "odbior-nagrody") {
+      return createTicket(interaction, type, {
+        reward: interaction.fields.getTextInputValue("ticket_reward"),
       });
     }
 
