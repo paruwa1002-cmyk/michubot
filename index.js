@@ -38,7 +38,9 @@ const SETTINGS = {
   ],
   antiLinkEnabled: true,
   antiLinkMuteMs: 5 * 60 * 1000,
-  antiLinkBypassRoleIds: [],
+  antiLinkBypassRoleIds: [1492219296208785644,
+
+  ],
   antiSpamEnabled: true,
   antiSpamMaxMessages: 5,
   antiSpamWindowMs: 6 * 1000,
