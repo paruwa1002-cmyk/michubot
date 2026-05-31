@@ -308,12 +308,12 @@ function giveawayEmbed(giveaway, guild) {
       },
       {
         name: "Czas",
-        value: `**${giveaway.durationText}**`,
+        value: `<t:${giveaway.endsAt}:R>`,
         inline: true,
       },
       {
         name: "Koniec",
-        value: `<t:${giveaway.endsAt}:R>`,
+        value: `<t:${giveaway.endsAt}:f>`,
         inline: true,
       },
       {
