@@ -915,6 +915,17 @@ const commands = [
     .setName("sticky-off")
     .setDescription("Wylacza sticky message na tym kanale"),
   new SlashCommandBuilder()
+    .setName("clear")
+    .setDescription("Usuwa podana liczbe wiadomosci z kanalu")
+    .addIntegerOption((option) =>
+      option
+        .setName("liczba")
+        .setDescription("Ile wiadomosci usunac")
+        .setMinValue(1)
+        .setMaxValue(100)
+        .setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName("mute")
     .setDescription("Wycisza uzytkownika na podany czas")
     .addUserOption((option) =>
@@ -1183,6 +1194,35 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply({
         content: "Sticky message wylaczony na tym kanale.",
         ephemeral: true,
+      });
+    }
+
+    if (interaction.commandName === "clear") {
+      const amount = interaction.options.getInteger("liczba");
+
+      if (!interaction.channel?.bulkDelete) {
+        return interaction.reply({
+          content: "Tej komendy mozna uzyc tylko na kanale tekstowym.",
+          ephemeral: true,
+        });
+      }
+
+      if (
+        !interaction.guild.members.me.permissionsIn(interaction.channel).has(
+          PermissionsBitField.Flags.ManageMessages
+        )
+      ) {
+        return interaction.reply({
+          content: "Nie mam uprawnienia Zarzadzanie wiadomosciami na tym kanale.",
+          ephemeral: true,
+        });
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+      const deleted = await interaction.channel.bulkDelete(amount, true);
+
+      return interaction.editReply({
+        content: `Usunieto ${deleted.size} wiadomosci.`,
       });
     }
 
