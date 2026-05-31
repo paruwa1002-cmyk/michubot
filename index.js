@@ -613,7 +613,7 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
-  if (type === "middle-man") {
+  if (type === "middleman") {
     return [
       `> -ID osoby z którą chcesz się wymienić: **${answers.exchangeUserId || "Brak"}**`,
       `> -Nazwa osoby z którą chcesz się wymienić: **${answers.exchangeUserName || "Brak"}**`,
@@ -692,7 +692,7 @@ function showTicketModal(interaction, type) {
     return interaction.showModal(modal);
   }
 
-  if (type === "middle-man") {
+  if (type === "middleman") {
     const userIdInput = new TextInputBuilder()
       .setCustomId("ticket_exchange_user_id")
       .setLabel("ID osoby z którą chcesz się wymienić")
@@ -1178,7 +1178,7 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    if (type === "middle-man") {
+    if (type === "middleman") {
       return createTicket(interaction, type, {
         exchangeUserId: interaction.fields.getTextInputValue("ticket_exchange_user_id"),
         exchangeUserName: interaction.fields.getTextInputValue("ticket_exchange_user_name"),
