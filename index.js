@@ -24,6 +24,7 @@ const CONFIG_PATH = path.join(__dirname, "config.json");
 const BRAND = "Mnichu Trading World 👻";
 const COLOR = "#00FFFF";
 const giveaways = new Map();
+const giveawayTimers = new Map();
 let lastEndedGiveaway = null;
 const stickyCooldowns = new Set();
 const creatingTickets = new Set();
@@ -296,6 +297,20 @@ function formatDuration(input) {
   return `${match[1]} ${labels[match[2]]}`;
 }
 
+function formatRemainingTime(endsAt) {
+  const remainingMs = Math.max(0, endsAt * 1000 - Date.now());
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
 function giveawayEmbed(giveaway, guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
@@ -308,7 +323,7 @@ function giveawayEmbed(giveaway, guild) {
       },
       {
         name: "Czas",
-        value: `<t:${giveaway.endsAt}:R>`,
+        value: `**${formatRemainingTime(giveaway.endsAt)}**`,
         inline: true,
       },
       {
@@ -428,11 +443,46 @@ async function sendSticky(channel) {
   }, 1500);
 }
 
+function stopGiveawayTimer(giveawayId) {
+  const timer = giveawayTimers.get(giveawayId);
+  if (timer) {
+    clearInterval(timer);
+    giveawayTimers.delete(giveawayId);
+  }
+}
+
+function startGiveawayTimer(giveawayId) {
+  stopGiveawayTimer(giveawayId);
+
+  const timer = setInterval(async () => {
+    const giveaway = giveaways.get(giveawayId);
+    if (!giveaway) {
+      stopGiveawayTimer(giveawayId);
+      return;
+    }
+
+    const channel = await client.channels.fetch(giveaway.channelId).catch(() => null);
+    const message = await channel?.messages.fetch(giveaway.messageId).catch(() => null);
+
+    if (!message) {
+      stopGiveawayTimer(giveawayId);
+      return;
+    }
+
+    await message.edit({
+      embeds: [giveawayEmbed(giveaway, message.guild)],
+    }).catch(() => null);
+  }, 10000);
+
+  giveawayTimers.set(giveawayId, timer);
+}
+
 async function endGiveaway(giveawayId) {
   const giveaway = giveaways.get(giveawayId);
   if (!giveaway) return;
 
   giveaways.delete(giveawayId);
+  stopGiveawayTimer(giveawayId);
 
   const channel = await client.channels.fetch(giveaway.channelId).catch(() => null);
   const message = await channel?.messages.fetch(giveaway.messageId).catch(() => null);
@@ -939,6 +989,12 @@ const commands = [
         .setRequired(true)
     ),
   new SlashCommandBuilder()
+    .setName("add")
+    .setDescription("Dodaje osobe do aktualnego ticketa")
+    .addUserOption((option) =>
+      option.setName("osoba").setDescription("Kogo dodac do ticketa").setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName("reroll")
     .setDescription("Losuje ponownie ostatni zakonczony giveaway"),
   new SlashCommandBuilder()
@@ -1194,6 +1250,7 @@ client.on("interactionCreate", async (interaction) => {
       const message = await interaction.fetchReply();
       giveaway.messageId = message.id;
       giveaways.set(giveawayId, giveaway);
+      startGiveawayTimer(giveawayId);
 
       setTimeout(() => endGiveaway(giveawayId), duration);
       return;
@@ -1265,7 +1322,29 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    if (interaction.commandName === "reroll") {
+    if (interaction.commandName === "add") {
+      if (!isTicketChannel(interaction.channel)) {
+        return interaction.reply({
+          content: "Tej komendy mozna uzyc tylko na tickecie.",
+          ephemeral: true,
+        });
+      }
+
+      const user = interaction.options.getUser("osoba");
+
+      await interaction.channel.permissionOverwrites.edit(user.id, {
+        ViewChannel: true,
+        SendMessages: true,
+        ReadMessageHistory: true,
+      });
+
+      return interaction.reply({
+        content: `${user} zostal dodany do ticketa.`,
+        allowedMentions: { users: [user.id] },
+      });
+    }
+
+    if (interaction.commandName === "rerorll") {
       if (!lastEndedGiveaway) {
         return interaction.reply({
           content: "Nie ma jeszcze zakonczonego giveawayu do rerolla.",
@@ -1445,6 +1524,13 @@ client.on("interactionCreate", async (interaction) => {
     if (!isTicketChannel(interaction.channel)) {
       return interaction.reply({
         content: "To nie jest ticket.",
+        ephemeral: true,
+      });
+    }
+
+    if (!isAdmin(interaction.member)) {
+      return interaction.reply({
+        content: "Tylko administrator moze zamknac ticketa.",
         ephemeral: true,
       });
     }
