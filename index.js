@@ -26,6 +26,7 @@ const COLOR = "#00FFFF";
 const giveaways = new Map();
 const stickyCooldowns = new Set();
 const creatingTickets = new Set();
+const spamTracker = new Map();
 
 const SETTINGS = {
   shopName: "Mnichu Trading World",
@@ -38,6 +39,11 @@ const SETTINGS = {
   antiLinkEnabled: true,
   antiLinkMuteMs: 5 * 60 * 1000,
   antiLinkBypassRoleIds: [],
+  antiSpamEnabled: true,
+  antiSpamMaxMessages: 5,
+  antiSpamWindowMs: 6 * 1000,
+  antiSpamMuteMs: 5 * 60 * 1000,
+  antiSpamBypassRoleIds: [],
   ticketCategoryId: "1492219297915994215",
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
@@ -61,14 +67,16 @@ const SETTINGS = {
     "middle-man": "Middle man",
     pomoc: "Pomoc",
     "odbior-nagrody": "Odbiór nagrody",
+    scamers: "Scamers",
   },
   ticketEmojis: {
     zakup: "<:wozek:1510346111368302813>",
     "zakup-bazy": "<:sab:1510346031483588849>",
-    skup: "<:robux:1510346005659386026>",
-    "middle-man": "<:ludzie:1510345875296227390>",
+    skup: "<:worek:1510536925851816067>",
+    "middleman": "<:ludzie:1510345875296227390>",
     pomoc: "<:pytanie:1510345968992911561>",
     "odbior-nagrody": "<:plus:1510345941809627308>",
+    scamers: "<:klaun:1510537174045687869>",
   },
   reactionRoles: {
     // "ID_WIADOMOSCI": {
@@ -315,6 +323,45 @@ function canBypassAntiLink(member) {
   return SETTINGS.antiLinkBypassRoleIds.some((roleId) => member.roles.cache.has(roleId));
 }
 
+function canBypassAntiSpam(member) {
+  if (isAdmin(member)) return true;
+  return SETTINGS.antiSpamBypassRoleIds.some((roleId) => member.roles.cache.has(roleId));
+}
+
+async function handleAntiSpam(message) {
+  if (!SETTINGS.antiSpamEnabled || canBypassAntiSpam(message.member)) {
+    return false;
+  }
+
+  const now = Date.now();
+  const key = `${message.guild.id}:${message.author.id}`;
+  const timestamps = (spamTracker.get(key) || []).filter(
+    (timestamp) => now - timestamp < SETTINGS.antiSpamWindowMs
+  );
+
+  timestamps.push(now);
+  spamTracker.set(key, timestamps);
+
+  if (timestamps.length < SETTINGS.antiSpamMaxMessages) {
+    return false;
+  }
+
+  spamTracker.delete(key);
+
+  if (message.member?.moderatable) {
+    await message.member.timeout(SETTINGS.antiSpamMuteMs, "Antyspam: zbyt duzo wiadomosci").catch((error) => {
+      console.error("Nie udalo sie nadac timeoutu za spam:", error);
+    });
+  }
+
+  const warning = await message.channel.send({
+    content: `${message.author}, nie spamuj. Dostales wyciszenie za spam.`,
+  }).catch(() => null);
+
+  setTimeout(() => warning?.delete().catch(() => null), 5000);
+  return true;
+}
+
 async function sendSticky(channel) {
   const sticky = config.stickyMessages[channel.id];
   if (!sticky || stickyCooldowns.has(channel.id)) return;
@@ -513,6 +560,22 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
+  if (type === "zakup-bazy") {
+    return [
+      `> -Jaka baze chcesz kupic: **${answers.base || "Brak"}**`,
+      `> -Czym placisz: **${answers.payment || "Brak"}**`,
+      `> -Co w zastaw: **${answers.deposit || "Brak"}**`,
+    ].join("\n");
+  }
+
+  if (type === "scamers") {
+    return [
+      `> -ID scamera: **${answers.scammerId || "Brak"}**`,
+      `> -Nazwa scamera: **${answers.scammerName || "Brak"}**`,
+      `> -Opis na co oszukal: **${answers.scamDescription || "Brak"}**`,
+    ].join("\n");
+  }
+
   return `Opis sprawy:\n\`\`\`\n${answers.description || "Brak opisu"}\n\`\`\``;
 }
 
@@ -548,6 +611,68 @@ function showTicketModal(interaction, type) {
       new ActionRowBuilder().addComponents(itemInput),
       new ActionRowBuilder().addComponents(budgetInput),
       new ActionRowBuilder().addComponents(paymentInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "zakup-bazy") {
+    const baseInput = new TextInputBuilder()
+      .setCustomId("ticket_base")
+      .setLabel("Jaka baze chcesz kupic?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. baza pod serwer, grafike, Discord")
+      .setRequired(true);
+
+    const paymentInput = new TextInputBuilder()
+      .setCustomId("ticket_base_payment")
+      .setLabel("Czym placisz?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. BLIK, PayPal, PSC")
+      .setRequired(true);
+
+    const depositInput = new TextInputBuilder()
+      .setCustomId("ticket_deposit")
+      .setLabel("Co w zastaw?")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. konto, item, brak")
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(baseInput),
+      new ActionRowBuilder().addComponents(paymentInput),
+      new ActionRowBuilder().addComponents(depositInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (type === "scamers") {
+    const scammerIdInput = new TextInputBuilder()
+      .setCustomId("ticket_scammer_id")
+      .setLabel("ID scamera")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. 123456789012345678")
+      .setRequired(true);
+
+    const scammerNameInput = new TextInputBuilder()
+      .setCustomId("ticket_scammer_name")
+      .setLabel("Nazwa scamera")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("np. nick / nazwa Discord")
+      .setRequired(true);
+
+    const scamDescriptionInput = new TextInputBuilder()
+      .setCustomId("ticket_scam_description")
+      .setLabel("Opis na co oszukal")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Opisz dokladnie, na co oszukal")
+      .setRequired(true);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(scammerIdInput),
+      new ActionRowBuilder().addComponents(scammerNameInput),
+      new ActionRowBuilder().addComponents(scamDescriptionInput)
     );
 
     return interaction.showModal(modal);
@@ -732,6 +857,10 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  if (await handleAntiSpam(message)) {
+    return;
+  }
+
   if (
     SETTINGS.antiLinkEnabled &&
     (hasBlockedLink(message.content) || hasBlockedGif(message)) &&
@@ -886,6 +1015,22 @@ client.on("interactionCreate", async (interaction) => {
         item: interaction.fields.getTextInputValue("ticket_item"),
         budget: interaction.fields.getTextInputValue("ticket_budget"),
         payment: interaction.fields.getTextInputValue("ticket_payment"),
+      });
+    }
+
+    if (type === "zakup-bazy") {
+      return createTicket(interaction, type, {
+        base: interaction.fields.getTextInputValue("ticket_base"),
+        payment: interaction.fields.getTextInputValue("ticket_base_payment"),
+        deposit: interaction.fields.getTextInputValue("ticket_deposit"),
+      });
+    }
+
+    if (type === "scamers") {
+      return createTicket(interaction, type, {
+        scammerId: interaction.fields.getTextInputValue("ticket_scammer_id"),
+        scammerName: interaction.fields.getTextInputValue("ticket_scammer_name"),
+        scamDescription: interaction.fields.getTextInputValue("ticket_scam_description"),
       });
     }
 
