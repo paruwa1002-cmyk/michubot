@@ -24,6 +24,7 @@ const CONFIG_PATH = path.join(__dirname, "config.json");
 const BRAND = "Mnichu Trading World 👻";
 const COLOR = "#00FFFF";
 const giveaways = new Map();
+let lastEndedGiveaway = null;
 const stickyCooldowns = new Set();
 const creatingTickets = new Set();
 const spamTracker = new Map();
@@ -449,6 +450,12 @@ async function endGiveaway(giveawayId) {
   if (!channel) return;
 
   if (giveaway.members.size === 0) {
+    lastEndedGiveaway = {
+      ...giveaway,
+      members: new Set(giveaway.members),
+      lastWinners: [],
+      endedAt: Date.now(),
+    };
     await channel.send(`Giveaway **${giveaway.prize}** zakonczony. Nikt nie wzial udzialu.`);
     return;
   }
@@ -456,6 +463,12 @@ async function endGiveaway(giveawayId) {
   const participants = Array.from(giveaway.members).sort(() => Math.random() - 0.5);
   const winners = participants.slice(0, Math.min(giveaway.winners, participants.length));
   const winnerText = winners.map((winnerId) => `<@${winnerId}>`).join(", ");
+  lastEndedGiveaway = {
+    ...giveaway,
+    members: new Set(giveaway.members),
+    lastWinners: winners,
+    endedAt: Date.now(),
+  };
 
   await channel.send(`Giveaway **${giveaway.prize}** zakonczony. Wygrywa: ${winnerText}!`);
 }
@@ -926,6 +939,9 @@ const commands = [
         .setRequired(true)
     ),
   new SlashCommandBuilder()
+    .setName("reroll")
+    .setDescription("Losuje ponownie ostatni zakonczony giveaway"),
+  new SlashCommandBuilder()
     .setName("lc")
     .setDescription("Wysyla gotowa wiadomosc +rep")
     .addStringOption((option) =>
@@ -1127,7 +1143,7 @@ client.on("interactionCreate", async (interaction) => {
       const paymentMethod = interaction.options.getString("metoda");
 
       return interaction.reply({
-        content: `+rep ${interaction.user} (${item}) (${price}) (#${paymentMethod})`,
+        content: `+rep ${interaction.user} ${item} ${price} ${paymentMethod}`,
         allowedMentions: { users: [interaction.user.id] },
       });
     }
@@ -1246,6 +1262,45 @@ client.on("interactionCreate", async (interaction) => {
 
       return interaction.editReply({
         content: `Usunieto ${deleted.size} wiadomosci.`,
+      });
+    }
+
+    if (interaction.commandName === "reroll") {
+      if (!lastEndedGiveaway) {
+        return interaction.reply({
+          content: "Nie ma jeszcze zakonczonego giveawayu do rerolla.",
+          ephemeral: true,
+        });
+      }
+
+      if (lastEndedGiveaway.members.size === 0) {
+        return interaction.reply({
+          content: `Ostatni giveaway **${lastEndedGiveaway.prize}** nie mial uczestnikow.`,
+          ephemeral: true,
+        });
+      }
+
+      const previousWinners = new Set(lastEndedGiveaway.lastWinners || []);
+      let participants = Array.from(lastEndedGiveaway.members).filter(
+        (memberId) => !previousWinners.has(memberId)
+      );
+
+      if (participants.length === 0) {
+        participants = Array.from(lastEndedGiveaway.members);
+      }
+
+      participants.sort(() => Math.random() - 0.5);
+
+      const winners = participants.slice(
+        0,
+        Math.min(lastEndedGiveaway.winners, participants.length)
+      );
+      lastEndedGiveaway.lastWinners = winners;
+
+      const winnerText = winners.map((winnerId) => `<@${winnerId}>`).join(", ");
+
+      return interaction.reply({
+        content: `Reroll giveaway **${lastEndedGiveaway.prize}**. Wygrywa: ${winnerText}!`,
       });
     }
 
