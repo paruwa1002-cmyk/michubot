@@ -36,6 +36,7 @@ const SETTINGS = {
     "1503692092457881602",
   ],
   antiLinkEnabled: true,
+  antiLinkMuteMs: 5 * 60 * 1000,
   antiLinkBypassRoleIds: ["1510346580459261982"],
   ticketCategoryId: "1492219297915994215",
   ticketSupportRoleIds: ["1492219296208785645",
@@ -277,6 +278,19 @@ function hasBlockedLink(content) {
   return /(https?:\/\/|www\.|discord\.gg\/|discord\.com\/invite\/|dc\.gg\/|\.pl\b|\.com\b|\.net\b|\.gg\b)/i.test(
     content
   );
+}
+
+function hasBlockedGif(message) {
+  if (/(tenor\.com|giphy\.com|\.gif\b|\.gifv\b)/i.test(message.content)) {
+    return true;
+  }
+
+  return message.attachments.some((attachment) => {
+    const name = attachment.name || attachment.url || "";
+    const type = attachment.contentType || "";
+
+    return type.toLowerCase().includes("gif") || /\.gif(v)?(\?|$)/i.test(name);
+  });
 }
 
 function canBypassAntiLink(member) {
@@ -701,11 +715,24 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  if (SETTINGS.antiLinkEnabled && hasBlockedLink(message.content) && !canBypassAntiLink(message.member)) {
+  if (
+    SETTINGS.antiLinkEnabled &&
+    (hasBlockedLink(message.content) || hasBlockedGif(message)) &&
+    !canBypassAntiLink(message.member)
+  ) {
     await message.delete().catch(() => null);
 
+    if (message.member?.moderatable) {
+      await message.member.timeout(
+        SETTINGS.antiLinkMuteMs,
+        "Antylink/antygif: wyslanie zablokowanej tresci"
+      ).catch((error) => {
+        console.error("Nie udalo sie nadac timeoutu za antylink/antygif:", error);
+      });
+    }
+
     const warning = await message.channel.send({
-      content: `${message.author}, linki sa tutaj zablokowane.`,
+      content: `${message.author}, nie wysyłaj tego ścierwa deklu.`,
     });
 
     setTimeout(() => warning.delete().catch(() => null), 5000);
