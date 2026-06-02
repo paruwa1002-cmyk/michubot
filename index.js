@@ -21,22 +21,26 @@ const {
 } = require("discord.js");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
-const BRAND = "Mnichu Trading World 👻";
-const COLOR = "#00FFFF";
+const BRAND = "WalkBots™ 👻";
+const COLOR = "#ff0000";
 const giveaways = new Map();
 const giveawayTimers = new Map();
 let lastEndedGiveaway = null;
 const stickyCooldowns = new Set();
 const creatingTickets = new Set();
 const spamTracker = new Map();
+const counterUpdateTimers = new Map();
 
 const SETTINGS = {
-  shopName: "Mnichu Trading World",
-  ticketPanelImageUrl: "https://cdn.discordapp.com/attachments/1510339198975082719/1510341180783595630/file_00000000a2507246ae1236d8bc6bb63f.png?ex=6a1c7656&is=6a1b24d6&hm=5a5e57ec5c1e02d13c88e53a2222c82248defcafa6239ec46675fe3d4eaeb0d4&",
-  welcomeChannelId: "1492219297068744861",
-  leaveChannelId: "1506358859181326397",
+  shopName: "WalkBots™",
+  ticketPanelImageUrl: "https://cdn.discordapp.com/icons/1510673877091750078/2388c27ca034bdc5e7fdb73a07fbf63e.webp?size=100&quality=lossless",
+  welcomeChannelId: "1510673878735917198",
+  leaveChannelId: "1511054280348668057",
   verifyRoleIds: [
-    "1503692092457881602",
+    "1511054437118906450",
+  ],
+  joinRoleIds: [
+    "1510673877100134571",
   ],
   antiLinkEnabled: true,
   antiLinkMuteMs: 5 * 60 * 1000,
@@ -50,48 +54,35 @@ const SETTINGS = {
   antiSpamBypassRoleIds: [],
   ticketCategoryId: "1492219297915994215",
   ticketCategoryIds: {
-    zakup: "1510552049941610586",
-    "index": "1510552124029669516",
-    skup: "1510552176756396133",
-    "middleman": "1510552242221088909",
-    pomoc: "1510551447463395329",
-    "odbior-nagrody": "1510552340325859448",
-    scamers: "1510552389663592570",
+    "bot-discord": "1510673878291316797",
+    "hosting-bota-discord": "1510673878291316798",
+    pytanie: "1510673878291316804",
+    partnerstwo: "1510673878534328603",
   },
-  ticketSupportRoleIds: ["1492219296208785645",
-"1492219296208785646",
-"1503701315363143742",
-"1492219296208785647",
-"1505829696003379290",
+  ticketSupportRoleIds: ["1510673877112459346",
   ],
   ticketCategoryRoleIds: {
-    index: ["1510687819998302248"],
-    pomoc: ["1492219296208785645",
-"1492219296208785646",
-"1503701315363143742",
-"1492219296208785647",
-"1505829696003379290",
-"1492219296208785644",
+    pytanie: ["1510673877112459346",
 ],
   },
   ticketTypes: {
-    zakup: "Zakup",
-    "index": "index",
-    skup: "Skup",
-    "middleman": "Middleman",
-    pomoc: "Pomoc",
-    "odbior-nagrody": "Odbiór nagrody",
-    scamers: "Scamers",
+    "bot-discord": "bot discord",
+    "hosting-bota-discord": "hosting bota discord",
+    pytanie: "pytanie",
+    partnerstwo: "partnerstwo",
   },
   ticketEmojis: {
-    zakup: "<:wozek:1510346111368302813>",
-    "index": "<:dom:1510580079447638147>",
-    skup: "<:worek:1510536925851816067>",
-    "middleman": "<:tarcza:1510540379165032538>",
-    pomoc: "<:pytanie:1510345968992911561>",
-    "odbior-nagrody": "<:prezent:1510580597091864719>",
-    scamers: "<:klaun:1510537174045687869>",
+    "bot-discord": "<:bio:1510673960541622504>",
+    "hosting-bota-discord": "<:hosting:1510673978061230130>",
+    pytanie: "<:pytanie:1510673970377129995>",
+    partnerstwo: "<:partnerstwo:1510673968749875311>",
   },
+  legitEmojis: {
+    yes: "<a:tak:1511069596843638884>",
+    no: "<a:nie:1511069510101242147>",
+  },
+  legitCounterChannelId: "1510673879436361945",
+  vouchCounterChannelId: "1510673878916137141",
   reactionRoles: {
     // "ID_WIADOMOSCI": {
     //   "EMOJI_ALBO_ID_EMOJI": "ID_ROLI"
@@ -137,9 +128,11 @@ function ticketPanelEmbed() {
     .setDescription(
       [
         "```",
-        `🎫  ${SETTINGS.shopName} × STWÓRZ TICKET`,
+        `🎫  ${SETTINGS.shopName} × TICKETY`,
         "```",
-        "> 📩 × Wybierz **odpowiednią kategorię**, aby utworzyć ticketa!",
+        "> `📩` **× Wybierz odpowiednią kategorię, aby utworzyć ticketa.**",
+        "",
+        "> Prosimy o zachowanie cierpliwości na ticketach.",
       ].join("\n")
     );
 
@@ -148,6 +141,26 @@ function ticketPanelEmbed() {
   }
 
   return embed;
+}
+
+function legitPanelEmbed() {
+  return new EmbedBuilder()
+    .setColor(COLOR)
+    .setDescription(
+      [
+        "```",
+        `🤔  ${SETTINGS.shopName} × CZY LEGIT?`,
+        "```",
+        `❓ **Czy nasz serwer ${SETTINGS.shopName} jest LEGIT?**`,
+        "",
+        `• ${SETTINGS.legitEmojis.yes} Jeżeli uważasz, że **TAK** zaznacz reakcję ${SETTINGS.legitEmojis.yes} poniżej!`,
+        `• ${SETTINGS.legitEmojis.no} Jeżeli uważasz, że **NIE** zaznacz reakcję ${SETTINGS.legitEmojis.no} poniżej!`,
+        "",
+        `> Zaznaczenie reakcji ${SETTINGS.legitEmojis.no} bez dowodu skutkuje`,
+        "> **automatycznym tymczasowym wyciszeniem!**",
+      ].join("\n")
+    )
+    .setThumbnail(SETTINGS.ticketPanelImageUrl);
 }
 
 function ticketPanelSmallImageEmbeds() {
@@ -161,10 +174,10 @@ function ticketPanelSmallImageEmbeds() {
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World × WERYFIKACJA``")
+    .setTitle("<:tak:1510346070188884082> ``WalkBots™ × WERYFIKACJA``")
     .setDescription("Kliknij przycisk poniżej, aby się zweryfikować.")
     .setFooter({
-      text: "Mnichu Trading World × WERYFIKACJA",
+      text: "WalkBots™ × WERYFIKACJA",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -315,7 +328,7 @@ function formatRemainingTime(endsAt) {
 function giveawayEmbed(giveaway, guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("`Mnichu Trading World 👻 × KONKURS`")
+    .setTitle("`WalkBots™ × KONKURS`")
     .addFields(
       {
         name: "Nagroda",
@@ -344,13 +357,109 @@ function giveawayEmbed(giveaway, guild) {
       }
     )
     .setFooter({
-      text: "Mnichu Trading World 👻 × KONKURSY",
+      text: "WalkBots™ × KONKURSY",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
 
 function normalizeEmoji(reaction) {
   return reaction.emoji.id || reaction.emoji.name;
+}
+
+function emojiIdFromMarkup(emoji) {
+  return String(emoji).match(/:(\d+)>$/)?.[1] || emoji;
+}
+
+async function fetchTextChannel(guild, channelId) {
+  const channel = await guild.channels.fetch(channelId).catch(() => null);
+  return channel?.type === ChannelType.GuildText ? channel : null;
+}
+
+async function countMessages(channel) {
+  let total = 0;
+  let before;
+
+  while (true) {
+    const options = { limit: 100 };
+    if (before) options.before = before;
+
+    const messages = await channel.messages.fetch(options).catch(() => null);
+    if (!messages?.size) break;
+
+    total += messages.size;
+    before = messages.last().id;
+
+    if (messages.size < 100) break;
+  }
+
+  return total;
+}
+
+async function countEmojiReactions(channel, emojiId) {
+  let total = 0;
+  let before;
+
+  while (true) {
+    const options = { limit: 100 };
+    if (before) options.before = before;
+
+    const messages = await channel.messages.fetch(options).catch(() => null);
+    if (!messages?.size) break;
+
+    for (const message of messages.values()) {
+      const reaction = message.reactions.cache.find(
+        (cachedReaction) => normalizeEmoji(cachedReaction) === emojiId
+      );
+
+      if (reaction) {
+        total += Math.max(0, reaction.count - 1);
+      }
+    }
+
+    before = messages.last().id;
+
+    if (messages.size < 100) break;
+  }
+
+  return total;
+}
+
+async function renameChannelIfNeeded(channel, name) {
+  if (!channel || channel.name === name) return;
+
+  await channel.setName(name).catch((error) => {
+    console.error(`Nie udalo sie zmienic nazwy kanalu ${channel.id}:`, error);
+  });
+}
+
+async function updateLegitCounter(guild) {
+  const channel = await fetchTextChannel(guild, SETTINGS.legitCounterChannelId);
+  if (!channel) return;
+
+  const count = await countEmojiReactions(channel, emojiIdFromMarkup(SETTINGS.legitEmojis.yes));
+  await renameChannelIfNeeded(channel, `「🤔」czy˙legit➔${count}`);
+}
+
+async function updateVouchCounter(guild) {
+  const channel = await fetchTextChannel(guild, SETTINGS.vouchCounterChannelId);
+  if (!channel) return;
+
+  const count = await countMessages(channel);
+  await renameChannelIfNeeded(channel, `「✅」vouch➔${count}`);
+}
+
+function scheduleCounterUpdate(guild, key, updateFn, delayMs = 5000) {
+  if (counterUpdateTimers.has(key)) {
+    clearTimeout(counterUpdateTimers.get(key));
+  }
+
+  counterUpdateTimers.set(
+    key,
+    setTimeout(async () => {
+      counterUpdateTimers.delete(key);
+      await updateFn(guild);
+    }, delayMs)
+  );
 }
 
 function hasBlockedLink(content) {
@@ -612,7 +721,7 @@ async function createTicket(interaction, type, answers = {}) {
       .setThumbnail(interaction.guild.iconURL({ dynamic: true, size: 256 }))
       .addFields(
         {
-          name: "-  <:ludzik:1510345890110509107> Informacje o uzytkowniku",
+          name: "-  <:Members:1510673928182567052> Informacje o uzytkowniku",
           value: [
             `> -Ping: ${interaction.user}`,
             `> -Nick: **${interaction.user.username}**`,
@@ -621,7 +730,7 @@ async function createTicket(interaction, type, answers = {}) {
           inline: false,
         },
         {
-          name: "-  <:regulamin:1510345987955233069> z Informacje z formularza",
+          name: "-  <:edit:1510673909668642977> z Informacje z formularza",
           value: formatTicketAnswers(type, answers),
           inline: false,
         }
@@ -970,6 +1079,12 @@ const commands = [
         .setRequired(false)
     ),
   new SlashCommandBuilder()
+    .setName("tickets")
+    .setDescription("Wysyla panel ticketow"),
+  new SlashCommandBuilder()
+    .setName("weryfikacja")
+    .setDescription("Wysyla panel weryfikacji"),
+  new SlashCommandBuilder()
     .setName("sticky")
     .setDescription("Ustawia sticky message na tym kanale")
     .addStringOption((option) =>
@@ -1069,17 +1184,37 @@ client.once("clientReady", async () => {
 });
 
 client.on("guildMemberAdd", async (member) => {
+  for (const roleId of SETTINGS.joinRoleIds || []) {
+    await member.roles.add(roleId).catch((error) => {
+      console.error(`Nie udalo sie nadac roli startowej ${roleId}:`, error);
+    });
+  }
+
   if (!SETTINGS.welcomeChannelId) return;
 
   const channel = await member.guild.channels.fetch(SETTINGS.welcomeChannelId).catch(() => null);
   if (!channel) return;
 
+  const joinedAt = Math.floor((member.joinedTimestamp || Date.now()) / 1000);
+
   await channel.send({
+    content: `${member}`,
+    allowedMentions: { users: [member.id] },
     embeds: [
-      baseEmbed(
-        `${BRAND} x POWITANIA`,
-        `Witaj ${member} na serwerze **${member.guild.name}**!\nJest nas teraz **${member.guild.memberCount}**.`
-      ).setThumbnail(member.user.displayAvatarURL({ size: 256 })),
+      new EmbedBuilder()
+        .setColor(COLOR)
+        .setDescription(
+          [
+            "```",
+            `**``👋  ${SETTINGS.shopName} × WITAMY``**`,
+            "```",
+            "> `🤝` **× Dzięki za dołączenie na serwer**",
+            `> **${SETTINGS.shopName}**`,
+            `> \`⏳\` **× Dołączono na serwer <t:${joinedAt}:R>**`,
+            `> \`👥\` **× Aktualnie jest nas łącznie: \`${member.guild.memberCount}\` osób!**`,
+          ].join("\n")
+        )
+        .setThumbnail(member.user.displayAvatarURL({ size: 256 })),
     ],
   });
 });
@@ -1110,7 +1245,7 @@ client.on("messageCreate", async (message) => {
 
   const command = message.content.trim().toLowerCase();
 
-  if (command === "!hxw1" || command === "!hxw2") {
+  if (command === "!hxw1" || command === "!hxw2" || command === "!hxw3") {
     if (!isAdmin(message.member)) {
       await message.reply("Tylko administrator moze uzyc tej komendy.").catch(() => null);
       return;
@@ -1127,6 +1262,28 @@ client.on("messageCreate", async (message) => {
       await message.channel.send(payload).catch((error) => {
         console.error("Blad panelu ticketow:", error);
         return message.reply("Nie udalo sie wyslac panelu ticketow. Sprawdz konsole bota.").catch(() => null);
+      });
+      return;
+    }
+
+    if (command === "!hxw3") {
+      const legitMessage = await message.channel.send({
+        embeds: [legitPanelEmbed()],
+      }).catch((error) => {
+        console.error("Blad panelu legit:", error);
+        return null;
+      });
+
+      if (!legitMessage) {
+        await message.reply("Nie udalo sie wyslac panelu legit. Sprawdz konsole bota.").catch(() => null);
+        return;
+      }
+
+      await legitMessage.react(SETTINGS.legitEmojis.yes).catch((error) => {
+        console.error("Nie udalo sie dodac reakcji TAK:", error);
+      });
+      await legitMessage.react(SETTINGS.legitEmojis.no).catch((error) => {
+        console.error("Nie udalo sie dodac reakcji NIE:", error);
       });
       return;
     }
@@ -1210,6 +1367,23 @@ client.on("interactionCreate", async (interaction) => {
         content: "Tylko administrator moze uzyc tej komendy.",
         ephemeral: true,
       });
+    }
+
+    if (interaction.commandName === "tickets") {
+      const payload = await ticketPanelPayload(interaction.guild);
+
+      if (!payload) {
+        return interaction.reply({
+          content: "Brakuje kategorii ticketow w SETTINGS.ticketTypes.",
+          ephemeral: true,
+        });
+      }
+
+      return interaction.reply(payload);
+    }
+
+    if (interaction.commandName === "weryfikacja") {
+      return interaction.reply(verificationPanelPayload(interaction.guild));
     }
 
     if (interaction.commandName === "giveaway") {
@@ -1345,7 +1519,7 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    if (interaction.commandName === "rerorll") {
+    if (interaction.commandName === "reroll") {
       if (!lastEndedGiveaway) {
         return interaction.reply({
           content: "Nie ma jeszcze zakonczonego giveawayu do rerolla.",
