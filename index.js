@@ -183,6 +183,10 @@ function canUseGiveawayCommand(member) {
   return isAdmin(member) || hasAnyRole(member, SETTINGS.giveawayCommandRoleIds);
 }
 
+function canUseTicketCommand(member, type) {
+  return isAdmin(member) || hasAnyRole(member, ticketAccessRoleIds(type));
+}
+
 function cleanChannelName(name) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 24);
 }
@@ -1006,6 +1010,12 @@ const commands = [
       option.setName("osoba").setDescription("Kogo dodac do ticketa").setRequired(true)
     ),
   new SlashCommandBuilder()
+    .setName("claim")
+    .setDescription("Przejmuje aktualny ticket"),
+  new SlashCommandBuilder()
+    .setName("close")
+    .setDescription("Zamyka aktualny ticket"),
+  new SlashCommandBuilder()
     .setName("reroll")
     .setDescription("Losuje ponownie ostatni zakonczony giveaway"),
   new SlashCommandBuilder()
@@ -1213,6 +1223,70 @@ client.on("interactionCreate", async (interaction) => {
         content: `+rep ${interaction.user} ${item} ${price} [${paymentMethod}]`,
         allowedMentions: { users: [interaction.user.id] },
       });
+    }
+
+    if (interaction.commandName === "claim") {
+      if (!isTicketChannel(interaction.channel)) {
+        return interaction.reply({
+          content: "Tej komendy mozna uzyc tylko na tickecie.",
+          ephemeral: true,
+        });
+      }
+
+      const ticketType = ticketTypeFromChannel(interaction.channel);
+
+      if (!canUseTicketCommand(interaction.member, ticketType)) {
+        return interaction.reply({
+          content: "Nie masz uprawnien do przejecia tego ticketa.",
+          ephemeral: true,
+        });
+      }
+
+      if (interaction.channel.topic?.includes("Claimed by:")) {
+        return interaction.reply({
+          content: "Ten ticket jest juz przejety.",
+          ephemeral: true,
+        });
+      }
+
+      await interaction.channel.setTopic(
+        `${interaction.channel.topic || ""} | Claimed by: ${interaction.user.id}`
+      );
+
+      return interaction.reply({
+        embeds: [
+          baseEmbed(
+            `${BRAND} x TICKETY`,
+            `Ticket zostal przejety przez ${interaction.user}.`
+          ),
+        ],
+      });
+    }
+
+    if (interaction.commandName === "close") {
+      if (!isTicketChannel(interaction.channel)) {
+        return interaction.reply({
+          content: "Tej komendy mozna uzyc tylko na tickecie.",
+          ephemeral: true,
+        });
+      }
+
+      const ticketType = ticketTypeFromChannel(interaction.channel);
+
+      if (!canUseTicketCommand(interaction.member, ticketType)) {
+        return interaction.reply({
+          content: "Nie masz uprawnien do zamkniecia tego ticketa.",
+          ephemeral: true,
+        });
+      }
+
+      await interaction.reply({
+        content: "Ticket zostanie zamkniety za 3 sekundy...",
+        ephemeral: true,
+      });
+
+      setTimeout(() => interaction.channel.delete().catch(() => null), 3000);
+      return;
     }
 
     const canUseCommand =
