@@ -32,7 +32,7 @@ const spamTracker = new Map();
 
 const SETTINGS = {
   shopName: "Mnichu Trading World",
-  ticketPanelImageUrl: "https://cdn.discordapp.com/attachments/1510339198975082719/1510341180783595630/file_00000000a2507246ae1236d8bc6bb63f.png?ex=6a1c7656&is=6a1b24d6&hm=5a5e57ec5c1e02d13c88e53a2222c82248defcafa6239ec46675fe3d4eaeb0d4&",
+  ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937434268-dd6f9ec2-c69d-4eaf-81c3-3ade998ca202.webp",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
   verifyRoleIds: [
