@@ -1083,6 +1083,16 @@ const commands = [
     .addStringOption((option) =>
       option.setName("powod").setDescription("Powod bana").setRequired(false)
     ),
+
+    new SlashCommandBuilder()
+  .setName("wiadomosc")
+  .setDescription("Wysyła wiadomość przez bota")
+  .addStringOption(option =>
+    option
+      .setName("co")
+      .setDescription("Treść wiadomości")
+      .setRequired(true)
+  ),
 ];
 
 const client = new Client({
@@ -1237,6 +1247,16 @@ client.on("messageReactionRemove", async (reaction, user) => {
 client.on("interactionCreate", async (interaction) => {
   try {
   if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "wiadomosc") {
+  const wiadomosc = interaction.options.getString("co");
+
+  await interaction.channel.send(wiadomosc);
+
+  return interaction.reply({
+    content: "Wiadomość została wysłana!",
+    ephemeral: true,
+  });
+}
     if (interaction.commandName === "lc") {
       const item = interaction.options.getString("co");
       const price = interaction.options.getString("cena");
