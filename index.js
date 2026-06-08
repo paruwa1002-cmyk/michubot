@@ -53,8 +53,8 @@ const SETTINGS = {
   ticketCategoryIds: {
     zakup: "1510552049941610586",
     "index": "1510552124029669516",
-    skup: "1510552176756396133",
-    "middleman": "1510552242221088909",
+    skup: "1512030112588238958",
+    "middleman": "1512030060008177665",
     pomoc: "1511846773117681765",
     "odbior-nagrody": "1512029966026543256",
     scamers: "1512029921478971442",
@@ -1434,7 +1434,7 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    if (interaction.commandName === "rerorll") {
+    if (interaction.commandName === "reroll") {
       if (!lastEndedGiveaway) {
         return interaction.reply({
           content: "Nie ma jeszcze zakonczonego giveawayu do rerolla.",
