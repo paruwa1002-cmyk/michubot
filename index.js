@@ -32,7 +32,7 @@ const spamTracker = new Map();
 
 const SETTINGS = {
   shopName: "Mnichu Trading World",
-  ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937434268-dd6f9ec2-c69d-4eaf-81c3-3ade998ca202.webp",
+  ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
   verifyRoleIds: [
