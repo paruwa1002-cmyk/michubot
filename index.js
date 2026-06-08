@@ -1252,7 +1252,7 @@ client.on("interactionCreate", async (interaction) => {
 
   const embed = new EmbedBuilder()
   .setColor("#00FFFF")
-  .setTitle("Mnichu Shop | 7 zapro = garama × Index")
+  .setTitle("``Mnichu Shop | 7 zapro = garama × Index``")
   .setDescription(wiadomosc)
   .setTimestamp();
 
