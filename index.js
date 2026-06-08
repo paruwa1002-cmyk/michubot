@@ -1250,7 +1250,15 @@ client.on("interactionCreate", async (interaction) => {
     if (interaction.commandName === "wiadomosc") {
   const wiadomosc = interaction.options.getString("co");
 
-  await interaction.channel.send(wiadomosc);
+  const embed = new EmbedBuilder()
+  .setColor("#00FFFF")
+  .setTitle("Wiadomość")
+  .setDescription(wiadomosc)
+  .setTimestamp();
+
+await interaction.channel.send({
+  embeds: [embed]
+});
 
   return interaction.reply({
     content: "Wiadomość została wysłana!",
