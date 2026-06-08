@@ -58,6 +58,7 @@ const SETTINGS = {
     pomoc: "1511846773117681765",
     "odbior-nagrody": "1512029966026543256",
     scamers: "1512029921478971442",
+    partnerstwa: "1513578922019918085",
   },
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
@@ -84,6 +85,7 @@ const SETTINGS = {
     pomoc: "Pomoc",
     "odbior-nagrody": "Odbiór nagrody",
     scamers: "Scamers",
+    partnerstwa: "Partnerstwa"
   },
   ticketEmojis: {
     zakup: "<:wozek:1510346111368302813>",
@@ -93,6 +95,7 @@ const SETTINGS = {
     pomoc: "<:pytanie:1510345968992911561>",
     "odbior-nagrody": "<:prezent:1510580597091864719>",
     scamers: "<:klaun:1510537174045687869>",
+    partnerstwa: "<:ludzie:1510345875296227390>"
   },
   reactionRoles: {
     // "ID_WIADOMOSCI": {
@@ -719,6 +722,12 @@ function formatTicketAnswers(type, answers) {
     ].join("\n");
   }
 
+  if (type === "partnerstwa") {
+  return [
+    `> -Liczba osób na serwerze: **${answers.members || "Brak"}**`,
+  ].join("\n");
+}
+
   return `Opis sprawy:\n\`\`\`\n${answers.description || "Brak opisu"}\n\`\`\``;
 }
 
@@ -910,6 +919,20 @@ function showTicketModal(interaction, type) {
 
     return interaction.showModal(modal);
   }
+  if (type === "partnerstwa") {
+  const membersInput = new TextInputBuilder()
+    .setCustomId("ticket_members")
+    .setLabel("Ile osób znajduje się na serwerze?")
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder("np. 500")
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(membersInput)
+  );
+
+  return interaction.showModal(modal);
+}
 
   const descriptionInput = new TextInputBuilder()
     .setCustomId("ticket_description")
@@ -1571,6 +1594,12 @@ client.on("interactionCreate", async (interaction) => {
         exchangeItem: interaction.fields.getTextInputValue("ticket_exchange_item"),
       });
     }
+
+    if (type === "partnerstwa") {
+  return createTicket(interaction, type, {
+    members: interaction.fields.getTextInputValue("ticket_members"),
+  });
+}
 
     return createTicket(interaction, type, {
       description: interaction.fields.getTextInputValue("ticket_description"),
