@@ -21,7 +21,7 @@ const {
 } = require("discord.js");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
-const BRAND = "Mnichu Trading World 👻";
+const BRAND = "Mnichu Shop | 7 zapro = garama";
 const COLOR = "#00FFFF";
 const giveaways = new Map();
 const giveawayTimers = new Map();
@@ -31,7 +31,7 @@ const creatingTickets = new Set();
 const spamTracker = new Map();
 
 const SETTINGS = {
-  shopName: "Mnichu Trading World",
+  shopName: "Mnichu Shop | 7 zapro = garama",
   ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
@@ -166,10 +166,10 @@ function ticketPanelSmallImageEmbeds() {
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("<:tak:1510346070188884082> ``Mnichu Trading World × WERYFIKACJA``")
+    .setTitle("<:tak:1510346070188884082> ``Mnichu Shop | 7 zapro = garama × WERYFIKACJA``")
     .setDescription("Kliknij przycisk poniżej, aby się zweryfikować.")
     .setFooter({
-      text: "Mnichu Trading World × WERYFIKACJA",
+      text: "Mnichu Shop | 7 zapro = garama × WERYFIKACJA",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -332,7 +332,7 @@ function formatRemainingTime(endsAt) {
 function giveawayEmbed(giveaway, guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle("`Mnichu Trading World 👻 × KONKURS`")
+    .setTitle("`Mnichu Shop | 7 zapro = garama 👻 × KONKURS`")
     .addFields(
       {
         name: "Nagroda",
@@ -361,7 +361,7 @@ function giveawayEmbed(giveaway, guild) {
       }
     )
     .setFooter({
-      text: "Mnichu Trading World 👻 × KONKURSY",
+      text: "Mnichu Shop | 7 zapro = garama  × KONKURSY",
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
