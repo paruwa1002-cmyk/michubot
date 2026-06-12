@@ -1676,7 +1676,9 @@ await interaction.channel.send({
       });
     }
 
-    if (!isAdmin(interaction.member)) {
+    const ticketType = ticketTypeFromChannel(interaction.channel);
+
+if (!canUseTicketCommand(interaction.member, ticketType)) {
       return interaction.reply({
         content: "Tylko administrator moze zamknac ticketa.",
         ephemeral: true,
