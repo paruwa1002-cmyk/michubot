@@ -979,9 +979,11 @@ function verificationPanelPayload(guild) {
     components: [new ActionRowBuilder().addComponents(verifyButton)],
   };
 }
-
 const commands = [
+  
+
   new SlashCommandBuilder()
+
     .setName("giveaway")
     .setDescription("Tworzy giveaway")
     .addStringOption((option) =>
@@ -1007,6 +1009,11 @@ const commands = [
         .setMaxValue(20)
         .setRequired(false)
     ),
+
+    new SlashCommandBuilder()
+  .setName("legit")
+  .setDescription("Wysyła ankietę legit"),
+
   new SlashCommandBuilder()
     .setName("sticky")
     .setDescription("Ustawia sticky message na tym kanale")
@@ -1248,6 +1255,32 @@ client.on("messageReactionRemove", async (reaction, user) => {
 client.on("interactionCreate", async (interaction) => {
   try {
   if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "legit") {
+  const embed = new EmbedBuilder()
+    .setColor("#ff0000")
+    .setTitle("❓ Czy nasz serwer jest LEGIT?")
+    .setDescription(
+      [
+        "• ✅ Jeżeli uważasz, że TAK zaznacz reakcję ✅ poniżej!",
+        "",
+        "• ❌ Jeżeli uważasz, że NIE zaznacz reakcję ❌ poniżej!",
+        "",
+        "⚠️ Zaznaczenie reakcji ❌ bez dowodu może skutkować wyciszeniem."
+      ].join("\n")
+    );
+
+  const msg = await interaction.channel.send({
+    embeds: [embed]
+  });
+
+  await msg.react("1511069596843638884"); // tak
+await msg.react("1511069510101242147"); // nie
+
+  return interaction.reply({
+    content: "Ankieta została wysłana.",
+    ephemeral: true
+  });
+}
     if (interaction.commandName === "wiadomosc") {
   const wiadomosc = interaction.options.getString("co");
 
