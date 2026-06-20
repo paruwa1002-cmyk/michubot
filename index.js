@@ -1255,26 +1255,30 @@ client.on("messageReactionRemove", async (reaction, user) => {
 client.on("interactionCreate", async (interaction) => {
   try {
   if (interaction.isChatInputCommand()) {
-    if (interaction.commandName === "legit") {
+   if (interaction.commandName === "legit") {
   const embed = new EmbedBuilder()
-    .setColor("#ff0000")
-    .setTitle("❓ Czy nasz serwer jest LEGIT?")
+    .setColor("#2B2D31")
+    .setAuthor({
+      name: "🤔 FlightBots™ × CZY LEGIT?"
+    })
+    .setTitle("❓ Czy nasz serwer Mnichu Shop jest LEGIT?")
     .setDescription(
-      [
-        "• ✅ Jeżeli uważasz, że TAK zaznacz reakcję ✅ poniżej!",
-        "",
-        "• ❌ Jeżeli uważasz, że NIE zaznacz reakcję ❌ poniżej!",
-        "",
-        "⚠️ Zaznaczenie reakcji ❌ bez dowodu może skutkować wyciszeniem."
-      ].join("\n")
-    );
+`• <a:tak:1517757067568615535> Jeżeli uważasz, że **TAK** zaznacz reakcję <a:tak:1517757067568615535> poniżej!
+
+• <a:nie:1517757366521565214> Jeżeli uważasz, że **NIE** zaznacz reakcję <a:nie:1517757366521565214> poniżej!
+
+> ⚠️ Zaznaczenie reakcji ❌ bez dowodu skutkuje
+> **automatycznym tymczasowym wyciszeniem!**`
+    )
+    .setThumbnail("https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png")
+    
 
   const msg = await interaction.channel.send({
     embeds: [embed]
   });
 
-  await msg.react("<a:tak:1511069596843638884>"); // tak
-await msg.react("<a:nie:1511069510101242147>"); // nie
+  await msg.react("<a:tak:1517757067568615535>");
+  await msg.react("<a:nie:1517757366521565214>");
 
   return interaction.reply({
     content: "Ankieta została wysłana.",
