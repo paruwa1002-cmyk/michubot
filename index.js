@@ -1273,8 +1273,8 @@ client.on("interactionCreate", async (interaction) => {
     embeds: [embed]
   });
 
-  await msg.react("1511069596843638884"); // tak
-await msg.react("1511069510101242147"); // nie
+  await msg.react("<a:tak:1511069596843638884>"); // tak
+await msg.react("<a:nie:1511069510101242147>"); // nie
 
   return interaction.reply({
     content: "Ankieta została wysłana.",
