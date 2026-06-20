@@ -1259,7 +1259,7 @@ client.on("interactionCreate", async (interaction) => {
   const embed = new EmbedBuilder()
     .setColor("#2B2D31")
     .setAuthor({
-      name: "🤔 FlightBots™ × CZY LEGIT?"
+      name: "🤔 Mnichu Shop × CZY LEGIT?"
     })
     .setTitle("❓ Czy nasz serwer Mnichu Shop jest LEGIT?")
     .setDescription(
