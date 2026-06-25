@@ -210,6 +210,25 @@ function ticketAccessRoleIds(type) {
   ].filter(Boolean);
 }
 
+async function allowAttachmentsInExistingTickets(guild) {
+  await guild.channels.fetch().catch(() => null);
+
+  const ticketChannels = guild.channels.cache.filter(isTicketChannel);
+
+  for (const channel of ticketChannels.values()) {
+    for (const overwrite of channel.permissionOverwrites.cache.values()) {
+      if (
+        overwrite.allow.has(PermissionsBitField.Flags.SendMessages) &&
+        !overwrite.allow.has(PermissionsBitField.Flags.AttachFiles)
+      ) {
+        await channel.permissionOverwrites
+          .edit(overwrite.id, { AttachFiles: true })
+          .catch((error) => console.error(`Nie udalo sie dodac zdjec na ${channel.name}:`, error));
+      }
+    }
+  }
+}
+
 async function ticketParentId(guild, type) {
   const label = SETTINGS.ticketTypes[type] || type;
   const configuredId = SETTINGS.ticketCategoryIds?.[type] || SETTINGS.ticketCategoryId;
@@ -581,6 +600,7 @@ async function createTicket(interaction, type, answers = {}) {
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.AttachFiles,
           PermissionsBitField.Flags.ReadMessageHistory,
         ],
       },
@@ -589,6 +609,7 @@ async function createTicket(interaction, type, answers = {}) {
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.AttachFiles,
           PermissionsBitField.Flags.ManageChannels,
           PermissionsBitField.Flags.ReadMessageHistory,
         ],
@@ -601,6 +622,7 @@ async function createTicket(interaction, type, answers = {}) {
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.AttachFiles,
           PermissionsBitField.Flags.ReadMessageHistory,
         ],
       });
@@ -1125,6 +1147,7 @@ client.once("clientReady", async () => {
   if (process.env.GUILD_ID) {
     const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
     await guild?.commands.set(commands.map((command) => command.toJSON()));
+    if (guild) await allowAttachmentsInExistingTickets(guild);
     console.log("Komendy serwerowe zarejestrowane.");
   }
 });
@@ -1514,6 +1537,7 @@ await interaction.channel.send({
       await interaction.channel.permissionOverwrites.edit(user.id, {
         ViewChannel: true,
         SendMessages: true,
+        AttachFiles: true,
         ReadMessageHistory: true,
       });
 
