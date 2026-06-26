@@ -581,12 +581,12 @@ async function createTicket(interaction, type, answers = {}) {
       (channel) =>
         channel.type === ChannelType.GuildText &&
         channel.topic?.includes(`User: ${interaction.user.id}`) &&
-        channel.name.startsWith(`ticket-${type}-`)
+        channel.name.startsWith("ticket-")
     );
 
     if (existing) {
       return interaction.editReply({
-        content: `Masz juz otwarty ticket: ${existing}.`,
+        content: `Masz juz otwarty ticket: ${existing}. Zamknij go, zanim utworzysz kolejny.`,
       });
     }
 
@@ -1158,13 +1158,27 @@ client.on("guildMemberAdd", async (member) => {
   const channel = await member.guild.channels.fetch(SETTINGS.welcomeChannelId).catch(() => null);
   if (!channel) return;
 
+  const joinedAt = Math.floor((member.joinedTimestamp || Date.now()) / 1000);
+
   await channel.send({
+    content: `${member}`,
+    allowedMentions: { users: [member.id] },
     embeds: [
-      baseEmbed(
-        `${BRAND} x POWITANIA`,
-        `Witaj ${member} na serwerze **${member.guild.name}**!\nJest nas teraz **${member.guild.memberCount}**.`
-      ).setThumbnail(member.user.displayAvatarURL({ size: 256 })),
+      new EmbedBuilder()
+        .setColor(COLOR)
+        .setDescription(
+          [
+            `**👋  ${SETTINGS.shopName} × WITAMY**`,
+            "> `🤝` **× Dzięki za dołączenie na serwer**",
+            `> **${SETTINGS.shopName}**`,
+            `> \`⏳\` **× Dołączono na serwer <t:${joinedAt}:R>**`,
+            `> \`👥\` **× Aktualnie jest nas łącznie: \`${member.guild.memberCount}\` osób!**`,
+          ].join("\n")
+        )
+        .setThumbnail(member.user.displayAvatarURL({ size: 256 })),
     ],
+  }).catch((error) => {
+    console.error("Nie udalo sie wyslac powitania:", error);
   });
 });
 
@@ -1179,10 +1193,18 @@ client.on("guildMemberRemove", async (member) => {
 
   await channel.send({
     embeds: [
-      baseEmbed(
-        `${BRAND} x ODLOTY`,
-        `**${member.user.tag}** opuscil serwer.\nZostalo nas **${member.guild.memberCount}**.`
-      ).setThumbnail(member.user.displayAvatarURL({ size: 256 })),
+      new EmbedBuilder()
+        .setColor(COLOR)
+        .setDescription(
+          [
+            `**👋  ${SETTINGS.shopName} × POŻEGNANIA**`,
+            "> `👋` **× Użytkownik opuścił serwer**",
+            `> **${SETTINGS.shopName}**`,
+            `> \`👤\` **× Opuścił nas: \`${member.user.tag}\`**`,
+            `> \`👥\` **× Aktualnie jest nas łącznie: \`${member.guild.memberCount}\` osób!**`,
+          ].join("\n")
+        )
+        .setThumbnail(member.user.displayAvatarURL({ size: 256 })),
     ],
   }).catch((error) => {
     console.error("Nie udalo sie wyslac pozegnania:", error);
