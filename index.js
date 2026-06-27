@@ -166,17 +166,17 @@ function ticketPanelSmallImageEmbeds() {
 
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
-    .setColor("#FFB800")
+    .setColor("#00FFF")
     .setDescription(
       [
         "```",
-        `⭐  ${SETTINGS.shopName} × WERYFIKACJA`,
+        `<a:tak:1517757067568615535>  ${SETTINGS.shopName} × WERYFIKACJA`,
         "```",
         "",
         "・Aby mieć **całkowity dostęp** do serwera, **zweryfikuj się**",
         "klikając przycisk poniżej!",
         "",
-        "⭐ Dziękujemy za zaufanie!",
+        "<a:tak:1517757067568615535> Dziękujemy za zaufanie!",
         `・Zespół **${SETTINGS.shopName}**`,
       ].join("\n")
     )
@@ -1907,7 +1907,7 @@ process.on("uncaughtException", (error) => {
 
 async function startBot() {
   if (!process.env.TOKEN) {
-    console.error("Brakuje TOKEN w pliku .env.");
+    console.error("tokenu nje ma w .env.");
     process.exit(1);
   }
 
@@ -1916,7 +1916,7 @@ async function startBot() {
 
 if (require.main === module) {
   startBot().catch((error) => {
-    console.error("Nie udalo sie uruchomic bota.");
+    console.error("zjebalo sie.");
     console.error(error);
     process.exit(1);
   });
