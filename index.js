@@ -166,7 +166,7 @@ function ticketPanelSmallImageEmbeds() {
 
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
-    .setColor("#00FFF")
+    .setColor("#00FFFF")
     .setDescription(
       [
         "```",
