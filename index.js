@@ -170,7 +170,7 @@ function verificationPanelEmbed(guild) {
     .setDescription(
       [
         "```",
-        `<a:tak:1517757067568615535>  ${SETTINGS.shopName} × WERYFIKACJA`,
+        `✅ ${SETTINGS.shopName} × WERYFIKACJA`,
         "```",
         "",
         "・Aby mieć **całkowity dostęp** do serwera, **zweryfikuj się**",
