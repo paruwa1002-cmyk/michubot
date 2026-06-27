@@ -166,11 +166,23 @@ function ticketPanelSmallImageEmbeds() {
 
 function verificationPanelEmbed(guild) {
   return new EmbedBuilder()
-    .setColor(COLOR)
-    .setTitle("<:tak:1510346070188884082> ``Mnichu Shop | 7 zapro = garama × WERYFIKACJA``")
-    .setDescription("Kliknij przycisk poniżej, aby się zweryfikować.")
+    .setColor("#FFB800")
+    .setDescription(
+      [
+        "```",
+        `⭐  ${SETTINGS.shopName} × WERYFIKACJA`,
+        "```",
+        "",
+        "・Aby mieć **całkowity dostęp** do serwera, **zweryfikuj się**",
+        "klikając przycisk poniżej!",
+        "",
+        "⭐ Dziękujemy za zaufanie!",
+        `・Zespół **${SETTINGS.shopName}**`,
+      ].join("\n")
+    )
+    .setImage(SETTINGS.ticketPanelImageUrl)
     .setFooter({
-      text: "Mnichu Shop | 7 zapro = garama × WERYFIKACJA",
+      text: `© 2026 | ${SETTINGS.shopName}`,
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
@@ -993,8 +1005,9 @@ async function ticketPanelPayload(guild) {
 function verificationPanelPayload(guild) {
   const verifyButton = new ButtonBuilder()
     .setCustomId("verify")
-    .setLabel("Zweryfikuj się")
-    .setStyle(ButtonStyle.Success);
+    .setEmoji("⭐")
+    .setLabel("Zweryfikuj się!")
+    .setStyle(ButtonStyle.Secondary);
 
   return {
     embeds: [verificationPanelEmbed(guild)],
