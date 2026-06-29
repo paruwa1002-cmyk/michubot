@@ -5,6 +5,7 @@ const path = require("path");
 const {
   ActionRowBuilder,
   ActivityType,
+  AttachmentBuilder,
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
@@ -35,6 +36,7 @@ const SETTINGS = {
   ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
+  ticketLogChannelId: "1492219297068744854",
   verifyRoleIds: [
     "1503692092457881602",
   ],
@@ -215,11 +217,201 @@ function ticketTypeFromChannel(channel) {
   return channel?.topic?.match(/^Ticket: ([^|]+)/)?.[1]?.trim() || null;
 }
 
+function ticketOwnerIdFromChannel(channel) {
+  return channel?.topic?.match(/User:\s*(\d+)/)?.[1] || null;
+}
+
+function ticketClaimedByIdFromChannel(channel) {
+  return channel?.topic?.match(/Claimed by:\s*(\d+)/)?.[1] || null;
+}
+
 function ticketAccessRoleIds(type) {
   return [
     ...(SETTINGS.ticketSupportRoleIds || []),
     ...(SETTINGS.ticketCategoryRoleIds?.[type] || []),
   ].filter(Boolean);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function fetchAllChannelMessages(channel) {
+  const messages = [];
+  let before;
+
+  while (true) {
+    const fetched = await channel.messages.fetch({ limit: 100, before }).catch((error) => {
+      console.error("Nie udalo sie pobrac wiadomosci do transcriptu:", error);
+      return null;
+    });
+
+    if (!fetched?.size) break;
+
+    messages.push(...fetched.values());
+    before = fetched.last().id;
+
+    if (fetched.size < 100) break;
+  }
+
+  return messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+}
+
+function buildTicketTranscriptHtml(channel, messages, closedBy) {
+  const generatedAt = new Date().toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" });
+  const rows = messages.map((message) => {
+    const attachments = message.attachments.map((attachment) => {
+      const safeName = escapeHtml(attachment.name || attachment.url);
+      const safeUrl = escapeHtml(attachment.url);
+      return `<li><a href="${safeUrl}" target="_blank" rel="noreferrer">${safeName}</a></li>`;
+    }).join("");
+
+    const embeds = message.embeds.map((embed) => {
+      const title = embed.title ? `<strong>${escapeHtml(embed.title)}</strong>` : "";
+      const description = embed.description ? `<p>${escapeHtml(embed.description).replace(/\n/g, "<br>")}</p>` : "";
+      const fields = (embed.fields || []).map(
+        (field) => `<p><strong>${escapeHtml(field.name)}</strong><br>${escapeHtml(field.value).replace(/\n/g, "<br>")}</p>`
+      ).join("");
+      return `<div class="embed">${title}${description}${fields}</div>`;
+    }).join("");
+
+    return `
+      <article class="message">
+        <img class="avatar" src="${escapeHtml(message.author.displayAvatarURL({ size: 64 }))}" alt="">
+        <div class="body">
+          <div class="meta">
+            <span class="author">${escapeHtml(message.author.tag)}</span>
+            <span class="date">${escapeHtml(new Date(message.createdTimestamp).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }))}</span>
+          </div>
+          <div class="content">${escapeHtml(message.content || "").replace(/\n/g, "<br>") || "<em>Brak treści</em>"}</div>
+          ${attachments ? `<ul class="attachments">${attachments}</ul>` : ""}
+          ${embeds}
+        </div>
+      </article>`;
+  }).join("\n");
+
+  return `<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Historia ticketa - ${escapeHtml(channel.name)}</title>
+  <style>
+    body { margin: 0; background: #111214; color: #e7e9ed; font-family: Arial, sans-serif; }
+    header { padding: 28px; background: #1e1f22; border-bottom: 4px solid #00ffff; }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    .summary { color: #b5bac1; line-height: 1.5; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .message { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid #2b2d31; }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto; }
+    .body { min-width: 0; flex: 1; }
+    .meta { margin-bottom: 6px; }
+    .author { font-weight: 700; color: #ffffff; }
+    .date { color: #949ba4; font-size: 13px; margin-left: 8px; }
+    .content { white-space: normal; line-height: 1.45; }
+    .attachments { margin: 8px 0 0; padding-left: 20px; }
+    a { color: #00ffff; }
+    .embed { margin-top: 10px; padding: 12px; border-left: 4px solid #00ffff; background: #1e1f22; border-radius: 6px; }
+    em { color: #949ba4; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>${escapeHtml(SETTINGS.shopName)} - historia ticketa</h1>
+    <div class="summary">
+      Kanał: #${escapeHtml(channel.name)}<br>
+      Zamknął: ${escapeHtml(closedBy.tag)} (${escapeHtml(closedBy.id)})<br>
+      Wygenerowano: ${escapeHtml(generatedAt)}<br>
+      Liczba wiadomości: ${messages.length}
+    </div>
+  </header>
+  <main>${rows || "<p>Brak wiadomości w tickecie.</p>"}</main>
+</body>
+</html>`;
+}
+
+async function sendTicketTranscript(target, payload) {
+  if (!target) return false;
+
+  const file = new AttachmentBuilder(Buffer.from(payload.html, "utf8"), {
+    name: payload.fileName,
+  });
+
+  return target.send({
+    content: payload.content,
+    embeds: payload.embeds || [],
+    files: [file],
+  }).then(() => true).catch((error) => {
+    console.error(`Nie udalo sie wyslac transcriptu do ${target.id || target.name}:`, error);
+    return false;
+  });
+}
+
+function ticketClosedDmEmbed(channel, ticketType, closedBy) {
+  return new EmbedBuilder()
+    .setColor(COLOR)
+    .setDescription(
+      [
+        "```",
+        `💎  ${SETTINGS.shopName} × TWÓJ TICKET ZOSTAŁ ZAMKNIĘTY`,
+        "```",
+        "",
+        `> » **Ticket:** \`${channel.name}\``,
+        `> » **Kategoria:** \`${ticketType || "brak"}\``,
+        `> » **Zamknięty przez:** <@${closedBy.id}>`,
+        "> » **Powód:** `Brak podanego powodu`",
+        "",
+        `💎 © 2026 ${SETTINGS.shopName} × Ticket`,
+      ].join("\n")
+    );
+}
+
+async function closeTicketWithTranscript(interaction) {
+  const channel = interaction.channel;
+  const ticketType = ticketTypeFromChannel(channel);
+  const messages = await fetchAllChannelMessages(channel);
+  const html = buildTicketTranscriptHtml(channel, messages, interaction.user);
+  const fileName = `transcript-${channel.name}.html`.replace(/[^a-z0-9_.-]/gi, "-");
+  const ownerId = ticketOwnerIdFromChannel(channel);
+  const claimedById = ticketClaimedByIdFromChannel(channel);
+  const logChannelId = process.env.TICKET_LOG_CHANNEL_ID || SETTINGS.ticketLogChannelId;
+
+  const owner = ownerId ? await interaction.guild.members.fetch(ownerId).catch(() => null) : null;
+  const claimedBy = claimedById ? await interaction.guild.members.fetch(claimedById).catch(() => null) : null;
+  const logChannel = logChannelId ? await interaction.guild.channels.fetch(logChannelId).catch(() => null) : null;
+  const baseContent = `Historia ticketa **#${channel.name}** zamkniętego przez ${interaction.user.tag}.`;
+  const dmPayload = {
+    html,
+    fileName,
+    content: `📨 **Transcript twojego ticketa \`${channel.name}\`**`,
+    embeds: [ticketClosedDmEmbed(channel, ticketType, interaction.user)],
+  };
+
+  const payload = {
+    html,
+    fileName,
+    content: baseContent,
+  };
+
+  await sendTicketTranscript(owner?.user, dmPayload);
+
+  if (claimedBy?.id && claimedBy.id !== owner?.id) {
+    await sendTicketTranscript(claimedBy.user, dmPayload);
+  }
+
+  if (logChannel?.isTextBased()) {
+    await sendTicketTranscript(logChannel, {
+      ...payload,
+      content: `${baseContent}\nKlient: ${owner ? `${owner.user.tag} (${owner.id})` : "nie znaleziono"}\nPrzejął: ${claimedBy ? `${claimedBy.user.tag} (${claimedBy.id})` : "nikt"}`,
+    });
+  } else if (logChannelId) {
+    console.error(`Nie znaleziono tekstowego kanalu logow ticketow: ${logChannelId}`);
+  }
 }
 
 async function allowAttachmentsInExistingTickets(guild) {
@@ -1014,6 +1206,40 @@ function verificationPanelPayload(guild) {
     components: [new ActionRowBuilder().addComponents(verifyButton)],
   };
 }
+
+function rulesEmbed(guild) {
+  return new EmbedBuilder()
+    .setColor(COLOR)
+    .setDescription(
+      [
+        "```",
+        `${SETTINGS.shopName} × Regulamin`,
+        "```",
+        "",
+        "» **KULTURA OSOBISTA**",
+        "Szanuj wszystkich użytkowników. Zakaz obrażania, toksyczności oraz szerzenia mowy nienawiści.",
+        "",
+        "» **ZAKAZ SPAMU**",
+        "Nie nadużywaj oznaczeń `@everyone`, `@here`, nie spamuj wiadomościami ani nie używaj nadmiernie wielkich liter.",
+        "",
+        "» **REKLAMY**",
+        "Obowiązuje całkowity zakaz reklamowania innych serwerów, social mediów czy usług bez zgody administracji.",
+        "",
+        "» **TREŚCI**",
+        "Zabrania się publikowania materiałów NSFW, treści drastycznych oraz wszystkiego, co łamie prawo.",
+        "",
+        "» **ADMINISTRACJA**",
+        "Decyzje administracji są ostateczne. W przypadku pytań lub sporów, napisz wiadomość prywatną.",
+        "",
+        "» **ZASADY OGÓLNE**",
+        "Nieznajomość regulaminu nie zwalnia z jego przestrzegania. Bądź fair i dobrze się baw!",
+      ].join("\n")
+    )
+    .setFooter({
+      text: `© 2026 ${SETTINGS.shopName}`,
+      iconURL: guild.iconURL({ dynamic: true }),
+    });
+}
 const commands = [
   
 
@@ -1257,6 +1483,21 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  if (command === "!regulamin") {
+    if (!isAdmin(message.member)) {
+      await message.reply("Tylko administrator moze uzyc tej komendy.").catch(() => null);
+      return;
+    }
+
+    await message.channel.send({
+      embeds: [rulesEmbed(message.guild)],
+    }).catch((error) => {
+      console.error("Blad panelu regulaminu:", error);
+      return message.reply("Nie udalo sie wyslac regulaminu. Sprawdz konsole bota.").catch(() => null);
+    });
+    return;
+  }
+
   if (await handleAntiSpam(message)) {
     return;
   }
@@ -1428,10 +1669,11 @@ await interaction.channel.send({
       }
 
       await interaction.reply({
-        content: "Ticket zostanie zamkniety za 3 sekundy...",
+        content: "Zapisuje historie ticketa i zamykam kanal...",
         ephemeral: true,
       });
 
+      await closeTicketWithTranscript(interaction);
       setTimeout(() => interaction.channel.delete().catch(() => null), 3000);
       return;
     }
@@ -1782,10 +2024,11 @@ if (!canUseTicketCommand(interaction.member, ticketType)) {
     }
 
     await interaction.reply({
-      content: "Ticket zostanie zamkniety za 3 sekundy...",
+      content: "Zapisuje historie ticketa i zamykam kanal...",
       ephemeral: true,
     });
 
+    await closeTicketWithTranscript(interaction);
     setTimeout(() => interaction.channel.delete().catch(() => null), 3000);
   }
 
