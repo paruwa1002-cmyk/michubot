@@ -364,7 +364,6 @@ function ticketClosedDmEmbed(channel, ticketType, closedBy) {
         `> » **Ticket:** \`${channel.name}\``,
         `> » **Kategoria:** \`${ticketType || "brak"}\``,
         `> » **Zamknięty przez:** <@${closedBy.id}>`,
-        "> » **Powód:** `Brak podanego powodu`",
         "",
         `💎 © 2026 ${SETTINGS.shopName} × Ticket`,
       ].join("\n")
