@@ -33,7 +33,7 @@ const spamTracker = new Map();
 
 const SETTINGS = {
   shopName: "Mnichu Shop | 7 zapro = garama",
-  ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png",
+  ticketPanelImageUrl: "https://cdn.phototourl.com/free/2026-07-01-3d5c2e47-00a3-4dc6-87fa-d418eac97c19.png",
   accountsPanelImageUrl: "https://www.image2url.com/r2/default/images/1782924278832-02cc25a2-d1bc-4e79-983f-2aba41644ba0.png",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
@@ -88,6 +88,7 @@ const SETTINGS = {
     "middleman": "Middleman",
     pomoc: "Pomoc",
     "odbior-nagrody": "Odbiór nagrody",
+    "mystery-konta": "Mystery konta",
     scamers: "Scamers",
     partnerstwa: "Partnerstwa"
   },
@@ -98,6 +99,7 @@ const SETTINGS = {
     "middleman": "<:tarcza:1510540379165032538>",
     pomoc: "<:pytanie:1510345968992911561>",
     "odbior-nagrody": "<:prezent:1510580597091864719>",
+    "mystery-konta": "<:prezent:1510580597091864719>",
     scamers: "<:klaun:1510537174045687869>",
     partnerstwa: "<:ludzie:1510345875296227390>"
   },
@@ -155,14 +157,14 @@ function ticketPanelEmbed() {
     .setDescription(
       [
         "```",
-        `🎫  ${SETTINGS.shopName} × STWÓRZ TICKET`,
+        `📩  ${SETTINGS.shopName} × STWÓRZ TICKET`,
         "```",
-        "> 📩 × Wybierz **odpowiednią kategorię**, aby utworzyć ticketa!",
+        "> 📩 × **Wybierz odpowiednią kategorię, aby utworzyć ticketa!**",
       ].join("\n")
     );
 
   if (SETTINGS.ticketPanelImageUrl) {
-    embed.setThumbnail(SETTINGS.ticketPanelImageUrl);
+    embed.setImage(SETTINGS.ticketPanelImageUrl);
   }
 
   return embed;
