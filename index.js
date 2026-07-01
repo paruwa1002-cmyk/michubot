@@ -30,6 +30,12 @@ let lastEndedGiveaway = null;
 const stickyCooldowns = new Set();
 const creatingTickets = new Set();
 const spamTracker = new Map();
+const MYSTERY_ACCOUNT_OPTIONS = [
+  { label: "Basic", value: "basic", description: "Konto Basic - 30 zl" },
+  { label: "Advanced", value: "advanced", description: "Konto Advanced - 50 zl" },
+  { label: "Pro", value: "pro", description: "Konto Pro - 100 zl" },
+  { label: "Legend", value: "legend", description: "Konto Legend - 300 zl" },
+];
 
 const SETTINGS = {
   shopName: "Mnichu Shop | 7 zapro = garama",
@@ -62,6 +68,7 @@ const SETTINGS = {
     "odbior-nagrody": "1512029966026543256",
     scamers: "1512029921478971442",
     partnerstwa: "1513578922019918085",
+    mystery_konta: "1521934648098160831",
   },
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
@@ -99,7 +106,7 @@ const SETTINGS = {
     "middleman": "<:tarcza:1510540379165032538>",
     pomoc: "<:pytanie:1510345968992911561>",
     "odbior-nagrody": "<:prezent:1510580597091864719>",
-    "mystery-konta": "<:prezent:1510580597091864719>",
+    "mystery-konta": "<:mystery:1521933905014427768>",
     scamers: "<:klaun:1510537174045687869>",
     partnerstwa: "<:ludzie:1510345875296227390>"
   },
@@ -996,6 +1003,10 @@ function formatTicketAnswers(type, answers) {
       `> -Za co chcesz odebrac nagrode: **${answers.rewardReason || "Brak"}**`,
       `> -Jaka nagrode chcesz odebrac: **${answers.reward || "Brak"}**`,
     ].join("\n");
+  }
+
+  if (type === "mystery-konta") {
+    return `> -Wybrane konto: **${answers.accountType || "Brak"}**`;
   }
 
   if (type === "scamers") {
