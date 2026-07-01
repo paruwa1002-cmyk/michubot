@@ -36,6 +36,18 @@ const MYSTERY_ACCOUNT_OPTIONS = [
   { label: "Pro", value: "pro", description: "Konto Pro - 100 zl" },
   { label: "Legend", value: "legend", description: "Konto Legend - 300 zl" },
 ];
+const MYSTERY_PRICE_OPTIONS = [
+  { label: "30 zl", value: "30zl" },
+  { label: "50 zl", value: "50zl" },
+  { label: "100 zl", value: "100zl" },
+  { label: "300 zl", value: "300zl" },
+];
+const MYSTERY_PAYMENT_OPTIONS = [
+  { label: "BLIK", value: "blik" },
+  { label: "PayPal", value: "paypal" },
+  { label: "PSC", value: "psc" },
+  { label: "Crypto", value: "crypto" },
+];
 
 const SETTINGS = {
   shopName: "Mnichu Shop | 7 zapro = garama",
@@ -68,7 +80,7 @@ const SETTINGS = {
     "odbior-nagrody": "1512029966026543256",
     scamers: "1512029921478971442",
     partnerstwa: "1513578922019918085",
-    mystery_konta: "1521934648098160831",
+    "mystery-konta": "1521934648098160831",
   },
   ticketSupportRoleIds: ["1492219296208785645",
 "1492219296208785646",
@@ -1006,7 +1018,11 @@ function formatTicketAnswers(type, answers) {
   }
 
   if (type === "mystery-konta") {
-    return `> -Wybrane konto: **${answers.accountType || "Brak"}**`;
+    return [
+      `> -Jakie konto: **${answers.accountType || "Brak"}**`,
+      `> -Cena: **${answers.price || "Brak"}**`,
+      `> -Metoda platnosci: **${answers.payment || "Brak"}**`,
+    ].join("\n");
   }
 
   if (type === "scamers") {
@@ -1266,6 +1282,54 @@ async function ticketPanelPayload(guild) {
 
   return {
     embeds: [ticketPanelEmbed(), ...ticketPanelSmallImageEmbeds()],
+    components: [new ActionRowBuilder().addComponents(menu)],
+  };
+}
+
+function mysteryAccountSelectPayload() {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("mystery_account_select")
+    .setPlaceholder("🎁 × Jakie konto?")
+    .addOptions(
+      MYSTERY_ACCOUNT_OPTIONS.map((option) => ({
+        ...option,
+        emoji: { id: "1510580597091864719", name: "prezent" },
+      }))
+    );
+
+  return {
+    content: "🎁 **Jakie konto wybierasz?**",
+    components: [new ActionRowBuilder().addComponents(menu)],
+  };
+}
+
+function mysteryPriceSelectPayload(accountValue) {
+  const selected = MYSTERY_ACCOUNT_OPTIONS.find((option) => option.value === accountValue);
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`mystery_price_select_${accountValue}`)
+    .setPlaceholder("💸 × Cena")
+    .addOptions(MYSTERY_PRICE_OPTIONS);
+
+  return {
+    content: `🎁 Konto: **${selected?.label || accountValue}**\n💸 **Wybierz cenę:**`,
+    components: [new ActionRowBuilder().addComponents(menu)],
+  };
+}
+
+function mysteryPaymentSelectPayload(accountValue, priceValue) {
+  const selectedAccount = MYSTERY_ACCOUNT_OPTIONS.find((option) => option.value === accountValue);
+  const selectedPrice = MYSTERY_PRICE_OPTIONS.find((option) => option.value === priceValue);
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`mystery_payment_select_${accountValue}_${priceValue}`)
+    .setPlaceholder("💳 × Metoda płatności")
+    .addOptions(MYSTERY_PAYMENT_OPTIONS);
+
+  return {
+    content: [
+      `🎁 Konto: **${selectedAccount?.label || accountValue}**`,
+      `💸 Cena: **${selectedPrice?.label || priceValue}**`,
+      "💳 **Wybierz metodę płatności:**",
+    ].join("\n"),
     components: [new ActionRowBuilder().addComponents(menu)],
   };
 }
@@ -2136,7 +2200,41 @@ await interaction.channel.send({
 
 
   if (interaction.isStringSelectMenu() && interaction.customId === "ticket_select") {
-    return showTicketModal(interaction, interaction.values[0]);
+    const type = interaction.values[0];
+
+    if (type === "mystery-konta") {
+      return interaction.reply({
+        ...mysteryAccountSelectPayload(),
+        ephemeral: true,
+      });
+    }
+
+    return showTicketModal(interaction, type);
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId === "mystery_account_select") {
+    return interaction.update(mysteryPriceSelectPayload(interaction.values[0]));
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith("mystery_price_select_")) {
+    const accountValue = interaction.customId.replace("mystery_price_select_", "");
+    return interaction.update(mysteryPaymentSelectPayload(accountValue, interaction.values[0]));
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith("mystery_payment_select_")) {
+    const parts = interaction.customId.replace("mystery_payment_select_", "").split("_");
+    const accountValue = parts[0];
+    const priceValue = parts[1];
+    const paymentValue = interaction.values[0];
+    const selectedAccount = MYSTERY_ACCOUNT_OPTIONS.find((option) => option.value === accountValue);
+    const selectedPrice = MYSTERY_PRICE_OPTIONS.find((option) => option.value === priceValue);
+    const selectedPayment = MYSTERY_PAYMENT_OPTIONS.find((option) => option.value === paymentValue);
+
+    return createTicket(interaction, "mystery-konta", {
+      accountType: selectedAccount?.label || accountValue,
+      price: selectedPrice?.label || priceValue,
+      payment: selectedPayment?.label || paymentValue,
+    });
   }
 
   if (interaction.isModalSubmit() && interaction.customId.startsWith("ticket_modal_")) {
