@@ -866,7 +866,7 @@ async function createTicket(interaction, type, answers = {}) {
         deny: [PermissionsBitField.Flags.ViewChannel],
       },
       {
-        id: interaction.user.id,
+        id: interaction.user,
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
