@@ -34,6 +34,7 @@ const spamTracker = new Map();
 const SETTINGS = {
   shopName: "Mnichu Shop | 7 zapro = garama",
   ticketPanelImageUrl: "https://www.image2url.com/r2/default/images/1780937702836-13645545-4aa2-45f4-ac5d-cfc9896b97d3.png",
+  accountsPanelImageUrl: "https://www.image2url.com/r2/default/images/1782924278832-02cc25a2-d1bc-4e79-983f-2aba41644ba0.png",
   welcomeChannelId: "1492219297068744861",
   leaveChannelId: "1506358859181326397",
   ticketLogChannelId: "1492219297068744854",
@@ -1342,6 +1343,49 @@ function inviteRewardsEmbed(guild) {
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
+
+function accountsEmbed(guild) {
+  const embed = new EmbedBuilder()
+    .setColor(COLOR)
+    .setTitle(`<:emoji_1:1509921289320796362> ${SETTINGS.shopName} × Mystery konta Steal a Brainrot <:emoji_1:1509921289320796362>`)
+    .setDescription(
+      [
+
+        "",
+        "<:prezent:1510580597091864719> **KONTO BASIC - 30 zł**",
+        "• Zarobek: **400M/s - 800M/s**",
+        "• Losowa zawartość",
+        "• ✅ **Gwarancja rzadkich brainrotów**",
+        "",
+        "<:prezent:1510580597091864719> **KONTO ADVANCED - 50 zł**",
+        "• Zarobek: **800M/s - 1.3B/s**",
+        "• Lepsze RNG niż Basic",
+        "• 🧠 **Gwarantowana garamka!**",
+        "",
+        "<:prezent:1510580597091864719> **KONTO PRO - 100 zł**",
+        "• Zarobek: **1.8B/s - 2.5B/s**",
+        "• 🧠 **Gwarantowane rzadkie brainrot**",
+        "• Bardzo mocna losowa zawartość",
+        "",
+        "<:prezent:1510580597091864719> **KONTO LEGEND - 300 zł**",
+        "• Zarobek: **2.5B/s - 8B/s**",
+        "• 🧠 **Bardzo dużo rzadkich brainrotów**",
+        "• 🔥 Top-tier konto",
+        "",
+        "Robimy też mystery konta dopasowane pod Twój budżet!",
+      ].join("\n")
+    )
+    .setFooter({
+      text: `© 2026 ${SETTINGS.shopName}`,
+      iconURL: guild.iconURL({ dynamic: true }),
+    });
+
+  if (SETTINGS.accountsPanelImageUrl) {
+    embed.setImage(SETTINGS.accountsPanelImageUrl);
+  }
+
+  return embed;
+}
 const commands = [
   
 
@@ -1611,6 +1655,21 @@ client.on("messageCreate", async (message) => {
     }).catch((error) => {
       console.error("Blad panelu nagrod za zapro:", error);
       return message.reply("Nie udalo sie wyslac nagrod za zapro. Sprawdz konsole bota.").catch(() => null);
+    });
+    return;
+  }
+
+  if (command === "!konta") {
+    if (!isAdmin(message.member)) {
+      await message.reply("Tylko administrator moze uzyc tej komendy.").catch(() => null);
+      return;
+    }
+
+    await message.channel.send({
+      embeds: [accountsEmbed(message.guild)],
+    }).catch((error) => {
+      console.error("Blad panelu kont:", error);
+      return message.reply("Nie udalo sie wyslac panelu kont. Sprawdz konsole bota.").catch(() => null);
     });
     return;
   }
