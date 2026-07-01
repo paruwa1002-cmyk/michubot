@@ -105,18 +105,27 @@ const SETTINGS = {
     //   "EMOJI_ALBO_ID_EMOJI": "ID_ROLI"
     // }
   },
+  pingRoleOptions: [
+    { label: "ping konkursy", emoji: "<:prezent:1510580597091864719>", roleId: "1503804350357831730" },
+    { label: "ping restock", emoji: "<:wozek:1510346111368302813>", roleId: "1503804447208505494" },
+    { label: "ping okazja", emoji: "<:worek:1510536925851816067>", roleId: "1503804398542000158" },
+    { label: "ping ogłoszenia", emoji: "<:dzwonek:1510345801573072946>", roleId: "1507848122108346558" },
+    { label: "ping live", emoji: "<:zegar:1510346125650165861>", roleId: "1503804513331445900" },
+  ],
 };
 
 function loadConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
     return {
       stickyMessages: {},
+      reactionRoles: {},
     };
   }
 
   const loaded = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
   return {
     stickyMessages: loaded.stickyMessages || {},
+    reactionRoles: loaded.reactionRoles || {},
   };
 }
 
@@ -591,6 +600,36 @@ function giveawayEmbed(giveaway, guild) {
 
 function normalizeEmoji(reaction) {
   return reaction.emoji.id || reaction.emoji.name;
+}
+
+function emojiKeyFromValue(emoji) {
+  const match = String(emoji).match(/^<a?:[^:]+:(\d+)>$/);
+  return match?.[1] || emoji;
+}
+
+function configuredPingRoles() {
+  return (SETTINGS.pingRoleOptions || []).filter(
+    (option) =>
+      option.label &&
+      option.emoji &&
+      option.roleId &&
+      !String(option.roleId).includes("TU_WPISZ")
+  );
+}
+
+function pingRolesEmbed(guild, options) {
+  return new EmbedBuilder()
+    .setColor(COLOR)
+    .setDescription(
+      [
+        "``✉️ Mnichu Shop | 7 zapro = garama × wybierz pingi``",
+        ...options.map((option) => `• **${option.label}** - ${option.emoji}`),
+      ].join("\n")
+    )
+    .setFooter({
+      text: `© 2026 ${SETTINGS.shopName}`,
+      iconURL: guild.iconURL({ dynamic: true }),
+    });
 }
 
 function hasBlockedLink(content) {
@@ -1239,6 +1278,33 @@ function rulesEmbed(guild) {
       iconURL: guild.iconURL({ dynamic: true }),
     });
 }
+
+function inviteRewardsEmbed(guild) {
+  return new EmbedBuilder()
+    .setColor(COLOR)
+    .setTitle(`${SETTINGS.shopName} x`)
+    .setDescription(
+      [
+        `**Nagrody za zapro**`,
+        "",
+        "**4 zapro**",
+        "> ➡️ brainrot 200m 👑",
+        "",
+        "**7 zapro**",
+        "> ➡️ brainrot 50-200m 🧦🧦",
+        "",
+        "*Można odebrać tylko jedną nagrodę, np. jak odbierzesz nagrodę za 4 zapro już nie będziesz mógł odebrać nagrody za 7.*",
+        "`(osoba musi się zweryfikować)`",
+        "",
+        "> Odbiór nagrody: **#🎫 | TICKET**",
+      ].join("\n")
+    )
+    .setThumbnail(SETTINGS.ticketPanelImageUrl)
+    .setFooter({
+      text: `© 2026 ${SETTINGS.shopName}`,
+      iconURL: guild.iconURL({ dynamic: true }),
+    });
+}
 const commands = [
   
 
@@ -1497,6 +1563,58 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
+  if (command === "!zapro") {
+    if (!isAdmin(message.member)) {
+      await message.reply("Tylko administrator moze uzyc tej komendy.").catch(() => null);
+      return;
+    }
+
+    await message.channel.send({
+      embeds: [inviteRewardsEmbed(message.guild)],
+    }).catch((error) => {
+      console.error("Blad panelu nagrod za zapro:", error);
+      return message.reply("Nie udalo sie wyslac nagrod za zapro. Sprawdz konsole bota.").catch(() => null);
+    });
+    return;
+  }
+
+  if (command === "!pingi") {
+    if (!isAdmin(message.member)) {
+      await message.reply("Tylko administrator moze uzyc tej komendy.").catch(() => null);
+      return;
+    }
+
+    const options = configuredPingRoles();
+    if (options.length === 0) {
+      await message.reply("Wpisz role i emotki w SETTINGS.pingRoleOptions, zanim wyslesz panel.").catch(() => null);
+      return;
+    }
+
+    const panel = await message.channel.send({
+      embeds: [pingRolesEmbed(message.guild, options)],
+    }).catch((error) => {
+      console.error("Blad panelu pingow:", error);
+      return null;
+    });
+
+    if (!panel) {
+      await message.reply("Nie udalo sie wyslac panelu pingow. Sprawdz konsole bota.").catch(() => null);
+      return;
+    }
+
+    config.reactionRoles[panel.id] = {};
+
+    for (const option of options) {
+      await panel.react(option.emoji).catch((error) => {
+        console.error(`Nie udalo sie dodac reakcji ${option.emoji}:`, error);
+      });
+      config.reactionRoles[panel.id][emojiKeyFromValue(option.emoji)] = option.roleId;
+    }
+
+    saveConfig();
+    return;
+  }
+
   if (await handleAntiSpam(message)) {
     return;
   }
@@ -1532,7 +1650,10 @@ client.on("messageReactionAdd", async (reaction, user) => {
   if (user.bot) return;
   if (reaction.partial) await reaction.fetch().catch(() => null);
 
-  const roleId = SETTINGS.reactionRoles[reaction.message.id]?.[normalizeEmoji(reaction)];
+  const emoji = normalizeEmoji(reaction);
+  const roleId =
+    config.reactionRoles?.[reaction.message.id]?.[emoji] ||
+    SETTINGS.reactionRoles[reaction.message.id]?.[emoji];
   if (!roleId) return;
 
   const member = await reaction.message.guild.members.fetch(user.id).catch(() => null);
@@ -1543,7 +1664,10 @@ client.on("messageReactionRemove", async (reaction, user) => {
   if (user.bot) return;
   if (reaction.partial) await reaction.fetch().catch(() => null);
 
-  const roleId = SETTINGS.reactionRoles[reaction.message.id]?.[normalizeEmoji(reaction)];
+  const emoji = normalizeEmoji(reaction);
+  const roleId =
+    config.reactionRoles?.[reaction.message.id]?.[emoji] ||
+    SETTINGS.reactionRoles[reaction.message.id]?.[emoji];
   if (!roleId) return;
 
   const member = await reaction.message.guild.members.fetch(user.id).catch(() => null);
