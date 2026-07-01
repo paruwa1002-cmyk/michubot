@@ -1282,21 +1282,20 @@ function rulesEmbed(guild) {
 function inviteRewardsEmbed(guild) {
   return new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle(`${SETTINGS.shopName} x`)
+    .setTitle(`<:emoji_1:1509921289320796362>${SETTINGS.shopName} Nagrody za zapro <:emoji_1:1509921289320796362>`)
     .setDescription(
       [
-        `**Nagrody za zapro**`,
         "",
         "**4 zapro**",
-        "> ➡️ brainrot 200m 👑",
+        " :a:1513889188909678603: brainrot 200m :a:1510345242044530819:",
         "",
         "**7 zapro**",
-        "> ➡️ brainrot 50-200m 🧦🧦",
+        " :a:1513889188909678603: brainrot 50-200m :1513889125009199104: ",
         "",
         "*Można odebrać tylko jedną nagrodę, np. jak odbierzesz nagrodę za 4 zapro już nie będziesz mógł odebrać nagrody za 7.*",
         "`(osoba musi się zweryfikować)`",
         "",
-        "> Odbiór nagrody: **#🎫 | TICKET**",
+        "> Odbiór nagrody: **<#1492219298481963209>**",
       ].join("\n")
     )
     .setThumbnail(SETTINGS.ticketPanelImageUrl)
