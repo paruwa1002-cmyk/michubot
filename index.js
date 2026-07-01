@@ -1275,7 +1275,7 @@ function rulesEmbed(guild) {
     .setDescription(
       [
         "```",
-        `📜 Regulamin Serwera ${SETTINGS.shopName} × 👻`,
+        `📜 Regulamin Serwera ${SETTINGS.shopName}  👻`,
         "```",
         "",
         "» **1. POSTANOWIENIA OGÓLNE**",
