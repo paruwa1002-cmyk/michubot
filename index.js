@@ -617,6 +617,30 @@ function configuredPingRoles() {
   );
 }
 
+function isPingRolesMessage(message) {
+  return (
+    message?.author?.id === client.user.id &&
+    message.embeds?.some((embed) => embed.description?.includes("wybierz pingi"))
+  );
+}
+
+function roleIdForReaction(reaction) {
+  const emoji = normalizeEmoji(reaction);
+  const savedRoleId =
+    config.reactionRoles?.[reaction.message.id]?.[emoji] ||
+    SETTINGS.reactionRoles[reaction.message.id]?.[emoji];
+
+  if (savedRoleId) return savedRoleId;
+
+  if (!isPingRolesMessage(reaction.message)) return null;
+
+  const option = configuredPingRoles().find(
+    (pingRole) => emojiKeyFromValue(pingRole.emoji) === emoji
+  );
+
+  return option?.roleId || null;
+}
+
 function pingRolesEmbed(guild, options) {
   return new EmbedBuilder()
     .setColor(COLOR)
@@ -1648,29 +1672,29 @@ client.on("messageCreate", async (message) => {
 client.on("messageReactionAdd", async (reaction, user) => {
   if (user.bot) return;
   if (reaction.partial) await reaction.fetch().catch(() => null);
+  if (reaction.message?.partial) await reaction.message.fetch().catch(() => null);
 
-  const emoji = normalizeEmoji(reaction);
-  const roleId =
-    config.reactionRoles?.[reaction.message.id]?.[emoji] ||
-    SETTINGS.reactionRoles[reaction.message.id]?.[emoji];
+  const roleId = roleIdForReaction(reaction);
   if (!roleId) return;
 
   const member = await reaction.message.guild.members.fetch(user.id).catch(() => null);
-  await member?.roles.add(roleId).catch(() => null);
+  await member?.roles.add(roleId).catch((error) => {
+    console.error(`Nie udalo sie nadac roli ${roleId} za reakcje:`, error);
+  });
 });
 
 client.on("messageReactionRemove", async (reaction, user) => {
   if (user.bot) return;
   if (reaction.partial) await reaction.fetch().catch(() => null);
+  if (reaction.message?.partial) await reaction.message.fetch().catch(() => null);
 
-  const emoji = normalizeEmoji(reaction);
-  const roleId =
-    config.reactionRoles?.[reaction.message.id]?.[emoji] ||
-    SETTINGS.reactionRoles[reaction.message.id]?.[emoji];
+  const roleId = roleIdForReaction(reaction);
   if (!roleId) return;
 
   const member = await reaction.message.guild.members.fetch(user.id).catch(() => null);
-  await member?.roles.remove(roleId).catch(() => null);
+  await member?.roles.remove(roleId).catch((error) => {
+    console.error(`Nie udalo sie zabrac roli ${roleId} za reakcje:`, error);
+  });
 });
 
 client.on("interactionCreate", async (interaction) => {
