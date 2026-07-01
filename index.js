@@ -1287,10 +1287,10 @@ function inviteRewardsEmbed(guild) {
       [
         "",
         "**4 zapro**",
-        " <:a:1513889188909678603:> brainrot 200m <:a:1510345242044530819:>",
+        " <:a:strzalka:1513889188909678603:> brainrot 200m <:a:strzalka:1510345242044530819:>",
         "",
         "**7 zapro**",
-        " <:a:1513889188909678603:> brainrot 50-200m <:1513889125009199104:> ",
+        " <:a:1513889188909678603:> brainrot 50-200m <:garama:1513889125009199104> ",
         "",
         "*Można odebrać tylko jedną nagrodę, np. jak odbierzesz nagrodę za 4 zapro już nie będziesz mógł odebrać nagrody za 7.*",
         "`(osoba musi się zweryfikować)`",
