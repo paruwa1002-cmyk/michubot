@@ -100,7 +100,7 @@ const SETTINGS = {
     "middleman": "<:tarcza:1510540379165032538>",
     pomoc: "<:pytanie:1510345968992911561>",
     "odbior-nagrody": "<:prezent:1510580597091864719>",
-    "mystery-konta": "<:mystery:1521933905014427768>",
+    "mystery-konta": "<:mystery:1522123319070031922>",
     scamers: "<:klaun:1510537174045687869>",
     partnerstwa: "<:ludzie:1510345875296227390>"
   },
@@ -866,7 +866,7 @@ async function createTicket(interaction, type, answers = {}) {
         deny: [PermissionsBitField.Flags.ViewChannel],
       },
       {
-        id: interaction.user,
+        id: interaction.user.id,
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
@@ -887,8 +887,14 @@ async function createTicket(interaction, type, answers = {}) {
     ];
 
     for (const roleId of ticketAccessRoleIds(type)) {
+      const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
+      if (!role) {
+        console.warn(`Pomijam role ticketa ${roleId} - nie znaleziono jej na serwerze.`);
+        continue;
+      }
+
       permissionOverwrites.push({
-        id: roleId,
+        id: role.id,
         allow: [
           PermissionsBitField.Flags.ViewChannel,
           PermissionsBitField.Flags.SendMessages,
